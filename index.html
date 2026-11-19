@@ -1,0 +1,3297 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>慣用句4択クイズ</title>
+  <style>
+    :root {
+      --primary: #3b82f6;
+      --primary-dark: #2563eb;
+      --secondary: #f59e0b;
+      --secondary-dark: #d97706;
+      --success: #10b981;
+      --success-dark: #059669;
+      --danger: #ef4444;
+      --danger-dark: #dc2626;
+      --bg-grad-1: #e0f2fe;
+      --bg-grad-2: #fef9c3;
+      --card-bg: #ffffff;
+      --text-main: #1e293b;
+      --text-sub: #475569;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html, body {
+      height: 100dvh;
+      width: 100%;
+      overflow: hidden;
+    }
+
+    body {
+      font-family: "Hiragino Maru Gothic ProN", "Rounded Mplus 1c", "Yu Gothic", "Meiryo", sans-serif;
+      background: linear-gradient(135deg, var(--bg-grad-1) 0%, var(--bg-grad-2) 100%);
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 8px;
+      transition: background 0.3s ease;
+    }
+
+    /* クリア時の七色フラッシュ演出（2倍速） */
+    @keyframes rainbowFlash {
+      0%   { background: #ff4d4d; }
+      14%  { background: #ffa64d; }
+      28%  { background: #ffff4d; }
+      42%  { background: #4dff88; }
+      57%  { background: #4dd2ff; }
+      71%  { background: #6666ff; }
+      85%  { background: #d966ff; }
+      100% { background: #ff4d4d; }
+    }
+
+    body.rainbow-active {
+      animation: rainbowFlash 0.7s linear infinite;
+    }
+
+    #fx-canvas {
+      position: fixed;
+      inset: 0;
+      width: 100vw;
+      height: 100vh;
+      pointer-events: none;
+      z-index: 60;
+    }
+
+    .app-container {
+      width: 100%;
+      max-width: 880px;
+      height: 100%;
+      max-height: 740px;
+      background: var(--card-bg);
+      border-radius: 24px;
+      box-shadow: 0 12px 30px rgba(30, 41, 59, 0.14);
+      padding: 14px 20px;
+      position: relative;
+      z-index: 10;
+      border: 4px solid #bae6fd;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    /* スタート画面（1画面フィット） */
+    .start-screen {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-evenly;
+      height: 100%;
+      text-align: center;
+      padding: 4px 6px;
+    }
+
+    .badge-grade {
+      display: inline-block;
+      background: #fef08a;
+      color: #854d0e;
+      font-weight: 800;
+      font-size: 0.88rem;
+      padding: 4px 14px;
+      border-radius: 999px;
+      border: 2px solid #facc15;
+    }
+
+    .start-title {
+      font-size: clamp(1.45rem, 3.4vw, 2rem);
+      font-weight: 900;
+      color: #0f172a;
+      line-height: 1.25;
+    }
+
+    .start-title span {
+      color: #2563eb;
+    }
+
+    .start-desc {
+      width: 100%;
+      max-width: 680px;
+      font-size: clamp(0.84rem, 1.8vw, 0.96rem);
+      color: var(--text-sub);
+      line-height: 1.5;
+      background: #f8fafc;
+      padding: 12px 16px;
+      border-radius: 16px;
+      border: 2px dashed #cbd5e1;
+      text-align: left;
+    }
+
+    .start-desc ul {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .start-desc li::before {
+      content: "⭐ ";
+    }
+
+    .start-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .btn-primary {
+      background: linear-gradient(180deg, #3b82f6 0%, #2563eb 100%);
+      color: #ffffff;
+      border: none;
+      border-bottom: 4px solid #1d4ed8;
+      border-radius: 16px;
+      padding: 12px 28px;
+      font-size: clamp(1.05rem, 2.2vw, 1.2rem);
+      font-weight: 800;
+      cursor: pointer;
+      transition: transform 0.1s, filter 0.15s;
+      font-family: inherit;
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.28);
+    }
+
+    .btn-primary:hover {
+      filter: brightness(1.06);
+    }
+
+    .btn-primary:active {
+      transform: translateY(2px);
+      border-bottom-width: 2px;
+    }
+
+    .btn-zukan {
+      background: linear-gradient(180deg, #8b5cf6 0%, #6d28d9 100%);
+      color: #ffffff;
+      border: none;
+      border-bottom: 4px solid #4c1d95;
+      border-radius: 14px;
+      padding: 8px 14px;
+      font-size: 0.9rem;
+      font-weight: 800;
+      cursor: pointer;
+      font-family: inherit;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: transform 0.1s, filter 0.15s;
+    }
+
+    .btn-zukan:hover {
+      filter: brightness(1.08);
+    }
+
+    .btn-zukan:active {
+      transform: translateY(2px);
+      border-bottom-width: 2px;
+    }
+
+    .btn-voice-toggle {
+      background: linear-gradient(180deg, #10b981 0%, #059669 100%);
+      color: #ffffff;
+      border: none;
+      border-bottom: 4px solid #047857;
+      border-radius: 14px;
+      padding: 8px 12px;
+      font-size: 0.86rem;
+      font-weight: 800;
+      cursor: pointer;
+      font-family: inherit;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      white-space: nowrap;
+      transition: transform 0.1s, filter 0.15s, background 0.15s;
+    }
+
+    .btn-voice-toggle:hover {
+      filter: brightness(1.06);
+    }
+
+    .btn-voice-toggle:active {
+      transform: translateY(2px);
+      border-bottom-width: 2px;
+    }
+
+    .btn-voice-toggle.voice-off {
+      background: linear-gradient(180deg, #94a3b8 0%, #64748b 100%);
+      border-bottom-color: #475569;
+    }
+
+    .btn-reset-small {
+      background: #f1f5f9;
+      color: #64748b;
+      border: 1.5px solid #cbd5e1;
+      border-bottom-width: 2.5px;
+      border-radius: 10px;
+      padding: 5px 10px;
+      font-size: 0.76rem;
+      font-weight: 800;
+      cursor: pointer;
+      font-family: inherit;
+      transition: transform 0.1s, background 0.15s, color 0.15s;
+    }
+
+    .btn-reset-small:hover {
+      background: #fee2e2;
+      color: #b91c1c;
+      border-color: #fca5a5;
+    }
+
+    .btn-reset-small:active {
+      transform: translateY(1px);
+    }
+
+    /* クイズ画面（1画面完結レイアウト） */
+    #quiz-screen {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      height: 100%;
+      gap: 8px;
+    }
+
+    .quiz-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding-bottom: 6px;
+      border-bottom: 2px solid #f1f5f9;
+      flex-shrink: 0;
+    }
+
+    .progress-info {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-weight: 800;
+      font-size: 0.92rem;
+      color: #0369a1;
+      white-space: nowrap;
+    }
+
+    .retry-pill {
+      background: #fee2e2;
+      color: #b91c1c;
+      border: 2px solid #fca5a5;
+      padding: 1px 8px;
+      border-radius: 999px;
+      font-size: 0.76rem;
+      font-weight: 800;
+      animation: pulseBadge 1.5s infinite;
+    }
+
+    @keyframes pulseBadge {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+    }
+
+    .header-center {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 80px;
+    }
+
+    .progress-bar-wrap {
+      flex: 1;
+      height: 10px;
+      background: #e2e8f0;
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #38bdf8, #10b981);
+      border-radius: 999px;
+      transition: width 0.35s ease;
+    }
+
+    .queue-text {
+      font-size: 0.82rem;
+      font-weight: 800;
+      color: #64748b;
+      white-space: nowrap;
+    }
+
+    /* 問題エリア（慣用句 + イラスト） */
+    .question-box {
+      display: grid;
+      grid-template-columns: 1fr 195px;
+      gap: 12px;
+      align-items: center;
+      background: #f0f9ff;
+      border: 3px solid #bae6fd;
+      border-radius: 18px;
+      padding: 10px 16px;
+      flex-shrink: 0;
+    }
+
+    @media (max-width: 560px) {
+      .question-box {
+        grid-template-columns: 1fr 125px;
+        padding: 8px 10px;
+        gap: 8px;
+      }
+      .queue-text {
+        display: none;
+      }
+    }
+
+    .idiom-label {
+      font-size: 0.8rem;
+      font-weight: 800;
+      color: #0284c7;
+      margin-bottom: 2px;
+    }
+
+    .idiom-text {
+      font-size: clamp(1.35rem, 3.2vw, 1.95rem);
+      font-weight: 900;
+      color: #0f172a;
+      line-height: 1.4;
+      margin-bottom: 6px;
+    }
+
+    .idiom-text ruby rt {
+      font-size: 0.45em;
+      color: #475569;
+      font-weight: 700;
+    }
+
+    .btn-speak {
+      background: #ffffff;
+      color: #0369a1;
+      border: 2px solid #7dd3fc;
+      border-bottom-width: 3px;
+      border-radius: 12px;
+      padding: 5px 12px;
+      font-size: 0.85rem;
+      font-weight: 800;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-family: inherit;
+      transition: transform 0.1s, background 0.15s;
+    }
+
+    .btn-speak:hover {
+      background: #e0f2fe;
+    }
+
+    .btn-speak:active {
+      transform: translateY(2px);
+      border-bottom-width: 1px;
+    }
+
+    .btn-speak:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    /* イラストカード */
+    .illustration-card {
+      width: 100%;
+      background: #ffffff;
+      border-radius: 14px;
+      border: 2px solid #cbd5e1;
+      padding: 5px;
+      box-shadow: 0 3px 8px rgba(0, 0, 0, 0.05);
+      text-align: center;
+    }
+
+    .illustration-card svg {
+      width: 100%;
+      height: 105px;
+      display: block;
+      border-radius: 9px;
+    }
+
+    @media (max-width: 560px) {
+      .illustration-card svg {
+        height: 76px;
+      }
+    }
+
+    .illustration-caption {
+      font-size: 0.7rem;
+      font-weight: 800;
+      color: #64748b;
+      margin-top: 2px;
+    }
+
+    /* 4択ボタン（縦に4行レイアウト） */
+    .options-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      grid-template-rows: repeat(4, 1fr);
+      gap: 7px;
+      flex: 1;
+      min-height: 0;
+    }
+
+    @media (max-width: 520px) {
+      .options-grid {
+        grid-template-columns: 1fr;
+        gap: 6px;
+      }
+    }
+
+    .option-btn {
+      width: 100%;
+      height: 100%;
+      text-align: left;
+      background: #ffffff;
+      border: 2.5px solid #cbd5e1;
+      border-bottom-width: 4px;
+      border-radius: 14px;
+      padding: 6px 14px;
+      font-size: clamp(1.02rem, 2.15vw, 1.26rem);
+      font-weight: 700;
+      line-height: 1.32;
+      color: #1e293b;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-family: inherit;
+      transition: transform 0.12s, border-color 0.15s, background-color 0.15s;
+    }
+
+    .option-btn:hover:not(:disabled) {
+      border-color: #60a5fa;
+      background: #eff6ff;
+      transform: translateY(-1px);
+    }
+
+    .option-btn:active:not(:disabled) {
+      transform: translateY(2px);
+      border-bottom-width: 2px;
+    }
+
+    .option-btn:disabled {
+      cursor: default;
+    }
+
+    .option-badge {
+      flex-shrink: 0;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 900;
+      font-size: 0.88rem;
+      color: #ffffff;
+    }
+
+    .opt-color-0 { background: #3b82f6; }
+    .opt-color-1 { background: #f59e0b; }
+    .opt-color-2 { background: #10b981; }
+    .opt-color-3 { background: #8b5cf6; }
+
+    .option-btn.correct-choice {
+      background: #d1fae5;
+      border-color: #10b981;
+      color: #065f46;
+    }
+
+    .option-btn.speaking-now {
+      border-color: #3b82f6;
+      background: #eff6ff;
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.22);
+    }
+
+    /* シャッフル・不正解シェイクアニメーション */
+    @keyframes shakeError {
+      0%, 100% { transform: translateX(0); }
+      20% { transform: translateX(-8px); }
+      40% { transform: translateX(8px); }
+      60% { transform: translateX(-6px); }
+      80% { transform: translateX(6px); }
+    }
+
+    .shake-anim {
+      animation: shakeError 0.4s ease;
+    }
+
+    @keyframes popShuffle {
+      0% { opacity: 0.35; transform: scale(0.96); }
+      100% { opacity: 1; transform: scale(1); }
+    }
+
+    .shuffle-anim {
+      animation: popShuffle 0.25s ease-out;
+    }
+
+    /* 下部ステータスバー（高さ固定で画面ずれ防止） */
+    .status-strip {
+      min-height: 40px;
+      border-radius: 12px;
+      padding: 6px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      font-size: 0.9rem;
+      font-weight: 800;
+      background: #f8fafc;
+      border: 2px solid #e2e8f0;
+      color: #475569;
+      flex-shrink: 0;
+    }
+
+    .status-strip.feedback-wrong {
+      background: #fef2f2;
+      border-color: #fca5a5;
+      color: #991b1b;
+    }
+
+    .status-strip.feedback-correct {
+      background: #ecfdf5;
+      border-color: #6ee7b7;
+      color: #065f46;
+    }
+
+    /* カード獲得ポップアップ演出 */
+    .card-get-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.65);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 45;
+      padding: 16px;
+    }
+
+    .card-get-box {
+      background: linear-gradient(145deg, #1e1b4b 0%, #312e81 55%, #4c1d95 100%);
+      border: 4px solid #facc15;
+      border-radius: 22px;
+      padding: 16px 22px;
+      max-width: 310px;
+      width: 100%;
+      text-align: center;
+      color: #ffffff;
+      box-shadow: 0 0 35px rgba(250, 204, 21, 0.55);
+      animation: cardPopIn 0.32s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+    }
+
+    @keyframes cardPopIn {
+      0% { transform: scale(0.5) rotate(-6deg); opacity: 0; }
+      100% { transform: scale(1) rotate(0deg); opacity: 1; }
+    }
+
+    .card-get-banner {
+      background: #facc15;
+      color: #422006;
+      font-weight: 900;
+      font-size: 0.88rem;
+      padding: 3px 12px;
+      border-radius: 999px;
+      display: inline-block;
+      margin-bottom: 8px;
+    }
+
+    .card-get-art {
+      background: #0f172a;
+      border: 2px solid #a78bfa;
+      border-radius: 14px;
+      padding: 6px;
+      margin-bottom: 8px;
+    }
+
+    .card-get-art svg {
+      width: 100%;
+      height: 120px;
+      display: block;
+    }
+
+    .card-get-name {
+      font-size: 1.25rem;
+      font-weight: 900;
+      color: #fef08a;
+      margin-bottom: 2px;
+    }
+
+    .card-get-origin {
+      font-size: 0.78rem;
+      color: #c4b5fd;
+      margin-bottom: 6px;
+    }
+
+    .card-get-desc {
+      font-size: 0.82rem;
+      line-height: 1.4;
+      color: #f1f5f9;
+    }
+
+    /* カード図鑑モーダル */
+    .zukan-modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.75);
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      z-index: 50;
+      padding: 16px 12px;
+      overflow-y: auto;
+    }
+
+    .zukan-panel {
+      background: #1e1b4b;
+      border: 4px solid #8b5cf6;
+      border-radius: 22px;
+      width: 100%;
+      max-width: 900px;
+      margin: auto;
+      display: flex;
+      flex-direction: column;
+      padding: 16px 20px;
+      color: #ffffff;
+      box-shadow: 0 18px 40px rgba(0, 0, 0, 0.45);
+    }
+
+    .zukan-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding-bottom: 10px;
+      border-bottom: 2px solid rgba(167, 139, 250, 0.3);
+      flex-shrink: 0;
+    }
+
+    .zukan-title {
+      font-size: 1.15rem;
+      font-weight: 900;
+      color: #fef08a;
+    }
+
+    .btn-close-zukan {
+      background: #ef4444;
+      color: #ffffff;
+      border: none;
+      border-bottom: 3px solid #991b1b;
+      border-radius: 10px;
+      padding: 6px 14px;
+      font-size: 0.88rem;
+      font-weight: 800;
+      cursor: pointer;
+      font-family: inherit;
+    }
+
+    .zukan-body {
+      margin-top: 12px;
+    }
+
+    .zukan-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    @media (max-width: 560px) {
+      .zukan-grid {
+        gap: 6px;
+      }
+    }
+
+    .zukan-card-item {
+      width: 100%;
+      min-width: 0;
+      background: #312e81;
+      border: 2px solid #6366f1;
+      border-radius: 12px;
+      padding: 8px 6px;
+      text-align: center;
+      cursor: pointer;
+      transition: transform 0.12s, border-color 0.15s;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .zukan-card-item:hover {
+      transform: translateY(-2px);
+      border-color: #facc15;
+    }
+
+    .zukan-card-item.locked {
+      background: #0f172a;
+      border-color: #334155;
+      opacity: 0.7;
+    }
+
+    .zukan-card-no {
+      font-size: 0.75rem;
+      font-weight: 800;
+      color: #a5b4fc;
+      text-align: left;
+    }
+
+    .zukan-card-thumb svg {
+      width: 100%;
+      height: 76px;
+      display: block;
+      margin: 4px 0;
+    }
+
+    .zukan-card-label {
+      font-size: 0.78rem;
+      font-weight: 800;
+      color: #ffffff;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* タップ時のみ表示されるカード拡大モーダル */
+    .zukan-zoom-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(9, 13, 22, 0.82);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 55;
+      padding: 16px;
+    }
+
+    .zukan-zoom-box {
+      background: linear-gradient(155deg, #1e1b4b 0%, #0f172a 100%);
+      border: 4px solid #facc15;
+      border-radius: 22px;
+      padding: 18px 20px;
+      width: 100%;
+      max-width: 380px;
+      text-align: center;
+      color: #ffffff;
+      box-shadow: 0 0 40px rgba(250, 204, 21, 0.45);
+      animation: cardPopIn 0.22s ease-out;
+    }
+
+    .zukan-zoom-box svg {
+      width: 100%;
+      height: 175px;
+      display: block;
+      margin: 8px 0 12px;
+    }
+
+    .btn-close-zoom {
+      margin-top: 14px;
+      background: #ef4444;
+      color: #ffffff;
+      border: none;
+      border-bottom: 3px solid #991b1b;
+      border-radius: 12px;
+      padding: 8px 22px;
+      font-size: 0.95rem;
+      font-weight: 800;
+      cursor: pointer;
+      font-family: inherit;
+    }
+
+    /* クリア画面（全60枚コンプリート表示・1画面フィット） */
+    .clear-screen {
+      display: none;
+      flex-direction: column;
+      justify-content: space-between;
+      align-items: center;
+      height: 100%;
+      text-align: center;
+      padding: 4px 0;
+    }
+
+    .clear-title {
+      font-size: clamp(1.2rem, 2.8vw, 1.75rem);
+      font-weight: 900;
+      background: linear-gradient(90deg, #ef4444, #f59e0b, #10b981, #3b82f6, #8b5cf6);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      line-height: 1.25;
+    }
+
+    .clear-sub {
+      font-size: 0.88rem;
+      font-weight: 800;
+      color: #1e293b;
+    }
+
+    .clear-cards-showcase {
+      width: 100%;
+      background: #1e1b4b;
+      border: 3px solid #facc15;
+      border-radius: 16px;
+      padding: 6px 8px;
+      display: grid;
+      grid-template-columns: repeat(10, minmax(0, 1fr));
+      gap: 4px;
+      flex: 1;
+      min-height: 0;
+      margin: 6px 0;
+      overflow-y: auto;
+    }
+
+    @media (max-width: 640px) {
+      .clear-cards-showcase {
+        grid-template-columns: repeat(6, minmax(0, 1fr));
+      }
+    }
+
+    .mini-complete-card {
+      background: #312e81;
+      border: 1px solid #a78bfa;
+      border-radius: 6px;
+      padding: 2px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+
+    .mini-complete-card:hover {
+      border-color: #facc15;
+    }
+
+    .mini-complete-card svg {
+      width: 100%;
+      height: 22px;
+      display: block;
+    }
+
+    .mini-complete-card span {
+      font-size: 0.56rem;
+      font-weight: 800;
+      color: #fef08a;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 100%;
+    }
+
+    .clear-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .btn-fanfare {
+      background: linear-gradient(180deg, #f59e0b 0%, #d97706 100%);
+      color: #ffffff;
+      border: none;
+      border-bottom: 4px solid #b45309;
+      border-radius: 14px;
+      padding: 10px 18px;
+      font-size: 0.95rem;
+      font-weight: 800;
+      cursor: pointer;
+      font-family: inherit;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="fx-canvas"></canvas>
+
+  <!-- カード獲得ポップアップ -->
+  <div id="card-get-overlay" class="card-get-overlay hidden">
+    <div class="card-get-box">
+      <div class="card-get-banner" id="card-get-banner">✨ 都市伝説カード ゲット！ ✨</div>
+      <div class="card-get-art" id="card-get-art"></div>
+      <div class="card-get-name" id="card-get-name"></div>
+      <div class="card-get-origin" id="card-get-origin"></div>
+      <div class="card-get-desc" id="card-get-desc"></div>
+    </div>
+  </div>
+
+  <!-- カード図鑑モーダル -->
+  <div id="zukan-modal" class="zukan-modal hidden">
+    <div class="zukan-panel">
+      <div class="zukan-header">
+        <div class="zukan-title" id="zukan-title">📖 世界の都市伝説バケモノ図鑑（0 / 60枚）</div>
+        <button type="button" class="btn-close-zukan" id="btn-close-zukan">✕ とじる</button>
+      </div>
+      <div class="zukan-body">
+        <div class="zukan-grid" id="zukan-grid"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- カードタップ時の拡大表示モーダル -->
+  <div id="zukan-zoom-overlay" class="zukan-zoom-overlay hidden">
+    <div class="zukan-zoom-box" id="zukan-zoom-box">
+      <div id="zukan-zoom-content"></div>
+      <button type="button" class="btn-close-zoom" id="btn-close-zoom">✕ とじる</button>
+    </div>
+  </div>
+
+  <!-- 初期化確認モーダル -->
+  <div id="reset-confirm-modal" class="zukan-zoom-overlay hidden">
+    <div class="zukan-zoom-box" style="max-width: 340px; background: #ffffff; color: #1e293b; border-color: #ef4444;">
+      <div style="font-size: 1.15rem; font-weight: 900; color: #dc2626; margin-bottom: 10px;">⚠️ データの初期化</div>
+      <p style="font-size: 1.05rem; font-weight: 800; line-height: 1.5; margin-bottom: 18px;">ほんとうに初期化していいですか？</p>
+      <div style="display: flex; gap: 12px; justify-content: center;">
+        <button type="button" id="btn-reset-yes" style="background: #ef4444; color: #ffffff; border: none; border-bottom: 3px solid #991b1b; border-radius: 12px; padding: 8px 24px; font-size: 0.98rem; font-weight: 800; cursor: pointer; font-family: inherit;">はい</button>
+        <button type="button" id="btn-reset-no" style="background: #94a3b8; color: #ffffff; border: none; border-bottom: 3px solid #475569; border-radius: 12px; padding: 8px 24px; font-size: 0.98rem; font-weight: 800; cursor: pointer; font-family: inherit;">いいえ</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="app-container" id="app-card">
+    <!-- スタート画面 -->
+    <div id="start-screen" class="start-screen">
+      <div class="badge-grade">小学4年生 国語</div>
+      <h1 class="start-title"><span>「慣用句」</span>4択マスタークイズ</h1>
+      <div class="start-desc">
+        <ul>
+          <li>教科書に出てくる大切な慣用句をふくむ<strong>全60問</strong>にチャレンジ！</li>
+          <li>問題と選択肢を<strong>声で読み上げ</strong>、<strong>元々の意味のイラスト</strong>が表示されます。</li>
+          <li>まちがえると<strong>「ブブッ」と音が鳴り、選択肢の場所がシャッフル</strong>されます！</li>
+          <li>正解すると<strong>「ピンポン！」</strong>と鳴って、<strong>世界の都市伝説バケモノカード</strong>をゲット！</li>
+          <li>60問すべてクリアして、<strong>全60枚のカード図鑑コンプリート</strong>をめざそう！</li>
+        </ul>
+      </div>
+      <div class="start-actions">
+        <button class="btn-primary" id="btn-start">クイズをはじめる！</button>
+        <button class="btn-voice-toggle" id="btn-toggle-voice-start" type="button">🔊 読み上げON</button>
+        <button class="btn-zukan" id="btn-open-zukan-start" type="button">📖 カード図鑑 (0/60)</button>
+        <button class="btn-reset-small" id="btn-open-reset" type="button">初期化</button>
+      </div>
+    </div>
+
+    <!-- クイズ画面 -->
+    <div id="quiz-screen" class="hidden">
+      <div class="quiz-header">
+        <div class="progress-info">
+          <span id="mastered-counter">クリア：0 / 60問</span>
+          <span id="retry-badge" class="retry-pill hidden">ふくしゅう！</span>
+        </div>
+        <div class="header-center">
+          <div class="progress-bar-wrap">
+            <div class="progress-bar-fill" id="progress-fill"></div>
+          </div>
+          <span class="queue-text" id="queue-counter">のこり60問</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 6px; flex-shrink: 0;">
+          <button class="btn-voice-toggle" id="btn-toggle-voice-quiz" type="button">🔊 読み上げON</button>
+          <button class="btn-zukan" id="btn-open-zukan-quiz" type="button">📖 図鑑 (0/60)</button>
+        </div>
+      </div>
+
+      <div class="question-box">
+        <div>
+          <div class="idiom-label">この慣用句（かんようく）の意味はどれかな？</div>
+          <div class="idiom-text" id="idiom-display"></div>
+          <button class="btn-speak" id="btn-replay-voice" type="button">
+            🔊 もういちど聞く
+          </button>
+        </div>
+
+        <div class="illustration-card">
+          <div id="illustration-slot"></div>
+          <div class="illustration-caption">▲ 元々の意味のイメージ</div>
+        </div>
+      </div>
+
+      <div class="options-grid" id="options-container"></div>
+
+      <div class="status-strip" id="status-strip">
+        正しい意味を4つの中から選ぼう！
+      </div>
+    </div>
+
+    <!-- クリア画面 -->
+    <div id="clear-screen" class="clear-screen">
+      <div>
+        <h2 class="clear-title">👑🎉 全60問クリア！全60枚コンプリート！ 🎆👑</h2>
+        <p class="clear-sub">世界の都市伝説バケモノカードがすべて揃ったよ！カードをタップするとくわしく見られるよ！</p>
+      </div>
+      <div class="clear-cards-showcase" id="clear-cards-showcase"></div>
+      <div class="clear-actions">
+        <button class="btn-zukan" id="btn-open-zukan-clear" type="button">📖 カード図鑑を大きく見る</button>
+        <button class="btn-fanfare" id="btn-replay-fanfare" type="button">🎺 ファンファーレ</button>
+        <button class="btn-primary" id="btn-restart" type="button" style="padding: 10px 20px; font-size: 0.98rem;">最初からもういちど</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { getFirestore, doc, getDoc, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+    // ==========================================
+    // 1. Web Audio API 効果音（ピンポン・ブザー・ファンファーレ）
+    // ==========================================
+    let audioCtx = null;
+
+    function ensureAudioContext() {
+      try {
+        if (!audioCtx) {
+          const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+          if (AudioContextClass) {
+            audioCtx = new AudioContextClass();
+          }
+        }
+        if (audioCtx && audioCtx.state === "suspended") {
+          audioCtx.resume();
+        }
+      } catch (e) {
+        // 音声初期化エラーを無視
+      }
+      return audioCtx;
+    }
+
+    function playTone(freq, startTime, duration, type = "sine", peakGain = 0.25) {
+      const ctx = ensureAudioContext();
+      if (!ctx) return;
+      try {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, startTime);
+
+        gain.gain.setValueAtTime(0.001, startTime);
+        gain.gain.exponentialRampToValueAtTime(peakGain, startTime + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
+
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+
+        osc.start(startTime);
+        osc.stop(startTime + duration + 0.02);
+      } catch (e) {
+        // 再生エラーを無視
+      }
+    }
+
+    // 正解時の「ピンポン！」音
+    function playPinPonSound() {
+      const ctx = ensureAudioContext();
+      if (!ctx) return;
+      const now = ctx.currentTime;
+      playTone(987.77, now, 0.22, "triangle", 0.28);        // シ (ピン)
+      playTone(783.99, now + 0.18, 0.42, "triangle", 0.3);  // ソ (ポン)
+    }
+
+    // 不正解時の「ブブッ」音
+    function playBuzzerSound() {
+      const ctx = ensureAudioContext();
+      if (!ctx) return;
+      const now = ctx.currentTime;
+      playTone(145, now, 0.14, "sawtooth", 0.24);
+      playTone(135, now + 0.17, 0.2, "sawtooth", 0.24);
+    }
+
+    // 全問クリア時のファンファーレ
+    function playFanfareSound() {
+      const ctx = ensureAudioContext();
+      if (!ctx) return;
+      const now = ctx.currentTime;
+      const notes = [
+        { freq: 523.25, time: 0.00, dur: 0.14 }, // ド
+        { freq: 659.25, time: 0.14, dur: 0.14 }, // ミ
+        { freq: 783.99, time: 0.28, dur: 0.14 }, // ソ
+        { freq: 1046.50, time: 0.44, dur: 0.36 }, // 高いド
+        { freq: 783.99, time: 0.84, dur: 0.16 }, // ソ
+        { freq: 1046.50, time: 1.04, dur: 0.65 }  // 高いド（のばす）
+      ];
+      notes.forEach((n) => {
+        playTone(n.freq, now + n.time, n.dur, "triangle", 0.26);
+        playTone(n.freq * 0.5, now + n.time, n.dur, "sine", 0.16);
+      });
+    }
+
+    // ==========================================
+    // 2. 慣用句データ（全60問：教科書必須13問 + 4年生頻出47問）& 元々の意味イラスト
+    // ==========================================
+    const IDIOMS_DATA = [
+      {
+        id: "atama_wo_hineru",
+        text: "頭をひねる",
+        reading: "あたまをひねる",
+        html: "<ruby>頭<rt>あたま</rt></ruby>をひねる",
+        correct: "どうしたらよいか、いろいろと深く考えること。",
+        distractors: [
+          "くびのたいそうをして、体のつかれをとること。",
+          "おこって、人の話をまったく聞かないこと。",
+          "うっかりして、大切な約束をわすれること。"
+        ]
+      },
+      {
+        id: "kokoro_ga_odoru",
+        text: "心がおどる",
+        reading: "こころがおどる",
+        html: "<ruby>心<rt>こころ</rt></ruby>がおどる",
+        correct: "期待やよろこびで、わくわくすること。",
+        distractors: [
+          "おどろきすぎて、声が出なくなること。",
+          "かなしくて、なみだが止まらなくなること。",
+          "音楽に合わせて、ダンスが上手になること。"
+        ]
+      },
+      {
+        id: "uma_ga_au",
+        text: "馬が合う",
+        reading: "うまがあう",
+        html: "<ruby>馬<rt>うま</rt></ruby>が<ruby>合<rt>あ</rt></ruby>う",
+        correct: "性格や考え方が合って、すぐになかよくなれること。",
+        distractors: [
+          "動物のおせわをするのが、とても得意なこと。",
+          "きょうそうで、二人同時にゴールすること。",
+          "意見がぶつかって、けんかになってしまうこと。"
+        ]
+      },
+      {
+        id: "karitekita_neko",
+        text: "借りてきたねこ",
+        reading: "かりてきたねこ",
+        html: "<ruby>借<rt>か</rt></ruby>りてきたねこ",
+        correct: "いつもとちがって、急におとなしくしているようす。",
+        distractors: [
+          "元気いっぱいに、部屋の中を走りまわるようす。",
+          "人から借りたものを、なかなか返さないようす。",
+          "ねむたくなって、どこでもすぐねてしまうようす。"
+        ]
+      },
+      {
+        id: "uri_futatsu",
+        text: "うり二つ",
+        reading: "うりふたつ",
+        html: "うり<ruby>二<rt>ふた</rt></ruby>つ",
+        correct: "顔や姿がそっくりなこと。",
+        distractors: [
+          "野菜を半分にきれいに切り分けること。",
+          "性格がまったく反対で、ちがっていること。",
+          "なかよく二人で、同じおやつを食べること。"
+        ]
+      },
+      {
+        id: "mi_wo_musubu",
+        text: "実を結ぶ",
+        reading: "みをむすぶ",
+        html: "<ruby>実<rt>み</rt></ruby>を<ruby>結<rt>むす</rt></ruby>ぶ",
+        correct: "これまでの努力が報われて、よい結果が出ること。",
+        distractors: [
+          "秋になって、くだものをたくさんしゅうかくすること。",
+          "ひもをかたむすびにして、ほどけなくすること。",
+          "とちゅうであきらめて、やめてしまうこと。"
+        ]
+      },
+      {
+        id: "enjin_ga_kakaru",
+        text: "エンジンがかかる",
+        reading: "えんじんがかかる",
+        html: "エンジンがかかる",
+        correct: "やる気が出てきて、物事が勢いよく進みはじめること。",
+        distractors: [
+          "車やバイクの修理が、やっと終わること。",
+          "大きな声を出して、みんなをおどろかせること。",
+          "つかれてしまって、まったく動けなくなること。"
+        ]
+      },
+      {
+        id: "mesu_wo_ireru",
+        text: "メスを入れる",
+        reading: "めすをいれる",
+        html: "メスを<ruby>入<rt>い</rt></ruby>れる",
+        correct: "悪いところを直すために、思い切って手を加えること。",
+        distractors: [
+          "お医者さんの道具を、かばんにしまうこと。",
+          "料理のために、野菜をこまかくきざむこと。",
+          "失敗をかくして、だれにも気づかれないようにすること。"
+        ]
+      },
+      {
+        id: "naka_wo_torimotsu",
+        text: "仲を取り持つ",
+        reading: "なかをとりもつ",
+        html: "<ruby>仲<rt>なか</rt></ruby>を<ruby>取<rt>と</rt></ruby>り<ruby>持<rt>も</rt></ruby>つ",
+        correct: "二人の間に入って、なかよくなるように助けること。",
+        distractors: [
+          "友だちとけんかをして、ぜっこうすること。",
+          "みんなの荷物を持って、運んであげること。",
+          "約束の時間に、一人だけおくれてしまうこと。"
+        ]
+      },
+      {
+        id: "eri_wo_tadasu",
+        text: "えりを正す",
+        reading: "えりをただす",
+        html: "えりを<ruby>正<rt>ただ</rt></ruby>す",
+        correct: "気持ちをひきしめて、まじめな態度になること。",
+        distractors: [
+          "洋服のボタンを全部はずして、リラックスすること。",
+          "まちがえた答えを、消しゴムで消して直すこと。",
+          "人前でじまん話をして、いばること。"
+        ]
+      },
+      {
+        id: "rou_wo_negirau",
+        text: "労をねぎらう",
+        reading: "ろうをねぎらう",
+        html: "<ruby>労<rt>ろう</rt></ruby>をねぎらう",
+        correct: "苦労や努力に対して、感謝やいたわりの言葉をかけること。",
+        distractors: [
+          "失敗した人を、きびしくしかること。",
+          "むずかしい仕事を、ほかの人におしつけること。",
+          "自分の手柄を、みんなにほめてもらうこと。"
+        ]
+      },
+      {
+        id: "sewa_wo_yaku",
+        text: "世話を焼く",
+        reading: "せわをやく",
+        html: "<ruby>世話<rt>せわ</rt></ruby>を<ruby>焼<rt>や</rt></ruby>く",
+        correct: "人のために、あれこれと親切にめんどうをみること。",
+        distractors: [
+          "火を使って、おいしいおもちを焼くこと。",
+          "人のことを気にせず、自分勝手に行動すること。",
+          "しんぱいしすぎて、夜ねむれなくなること。"
+        ]
+      },
+      {
+        id: "atama_wo_hiyasu",
+        text: "頭を冷やす",
+        reading: "あたまをひやす",
+        html: "<ruby>頭<rt>あたま</rt></ruby>を<ruby>冷<rt>ひ</rt></ruby>やす",
+        correct: "興奮をおさえて、冷静に落ち着いて考えること。",
+        distractors: [
+          "かき氷を一気に食べて、頭がキーンとすること。",
+          "かぜをひいて、おでこに氷まくらをのせること。",
+          "むずかしい計算を、暗算ですばやく解くこと。"
+        ]
+      },
+      {
+        id: "neko_ni_koban",
+        text: "猫に小判",
+        reading: "ねこにこばん",
+        html: "<ruby>猫<rt>ねこ</rt></ruby>に<ruby>小判<rt>こばん</rt></ruby>",
+        correct: "どんなに貴重なものでも、価値がわからない人には役に立たないこと。",
+        distractors: [
+          "お金持ちになって、たくさん買い物ができること。",
+          "動物を大切にすると、よいことが起こること。",
+          "めずらしい宝物を、みんなにじまんすること。"
+        ]
+      },
+      {
+        id: "michikusa_wo_kuu",
+        text: "道草を食う",
+        reading: "みちくさをくう",
+        html: "<ruby>道草<rt>みちくさ</rt></ruby>を<ruby>食<rt>く</rt></ruby>う",
+        correct: "目的地へ行く途中で、ほかのことに気をとられて時間をむだにすること。",
+        distractors: [
+          "おなかがすいて、道ばたの草を食べること。",
+          "寄り道をしないで、まっすぐ急いで帰ること。",
+          "道にまよって、どこにいるかわからなくなること。"
+        ]
+      },
+      {
+        id: "me_ga_mawaru",
+        text: "目が回る",
+        reading: "めがまわる",
+        html: "<ruby>目<rt>め</rt></ruby>が<ruby>回<rt>まわ</rt></ruby>る",
+        correct: "目がくらむほど、とてもいそがしいこと。",
+        distractors: [
+          "ひますぎて、やることが何もないこと。",
+          "高いところから下を見て、こわくなること。",
+          "メガネをかけて、遠くまでよく見えること。"
+        ]
+      },
+      {
+        id: "ude_wo_furuu",
+        text: "腕をふるう",
+        reading: "うでをふるう",
+        html: "<ruby>腕<rt>うで</rt></ruby>をふるう",
+        correct: "自分の持っている技術や実力を十分に発揮すること。",
+        distractors: [
+          "重い荷物を持ちすぎて、腕がいたくなること。",
+          "準備運動として、大きく腕を回すこと。",
+          "自信がなくて、人前でドキドキすること。"
+        ]
+      },
+      {
+        id: "hana_ga_takai",
+        text: "鼻が高い",
+        reading: "はながたかい",
+        html: "<ruby>鼻<rt>はな</rt></ruby>が<ruby>高<rt>たか</rt></ruby>い",
+        correct: "じまんしたくなるほど、ほこらしく思うこと。",
+        distractors: [
+          "においにびんかんで、遠くの料理がわかること。",
+          "うそをついて、はずかしい思いをすること。",
+          "かぜをひいて、くしゃみが止まらないこと。"
+        ]
+      },
+      {
+        id: "mimi_wo_sumasu",
+        text: "耳をすます",
+        reading: "みみをすます",
+        html: "<ruby>耳<rt>みみ</rt></ruby>をすます",
+        correct: "よく聞きとろうとして、神経を集中させること。",
+        distractors: [
+          "うるさい音が聞こえないように、耳をふさぐこと。",
+          "おふろに入って、耳のよごれをきれいにすること。",
+          "人の話を聞き流して、わすれてしまうこと。"
+        ]
+      },
+      {
+        id: "ashi_wo_hipparu",
+        text: "足を引っ張る",
+        reading: "あしをひっぱる",
+        html: "<ruby>足<rt>あし</rt></ruby>を<ruby>引<rt>ひ</rt></ruby>っ<ruby>張<rt>ぱ</rt></ruby>る",
+        correct: "人がうまくやろうとしていることのじゃまをすること。",
+        distractors: [
+          "つなひき大会で、チームのみんなと協力すること。",
+          "こまっている友だちを、後ろから助けること。",
+          "速く走れるように、毎日トレーニングすること。"
+        ]
+      },
+      {
+        id: "te_ga_deru",
+        text: "手が出る",
+        reading: "てがでる",
+        html: "<ruby>手<rt>て</rt></ruby>が<ruby>出<rt>で</rt></ruby>る",
+        correct: "ほしくてたまらなくなったり、思わずたたいたりすること。",
+        distractors: [
+          "ながそでの洋服から、うでがにょきっと見えること。",
+          "わからない問題に、すぐに手をあげて答えること。",
+          "じゃんけんで、いつもパーばかり出してしまうこと。"
+        ]
+      },
+      {
+        id: "kuchi_ga_katai",
+        text: "口が堅い",
+        reading: "くちがかたい",
+        html: "<ruby>口<rt>くち</rt></ruby>が<ruby>堅<rt>かた</rt></ruby>い",
+        correct: "ひみつをほかの人にしゃべらないこと。",
+        distractors: [
+          "かたいおせんべいを、バリバリと食べること。",
+          "緊張して、うまくあいさつができないこと。",
+          "いつもむずかしい言葉ばかりつかうこと。"
+        ]
+      },
+      {
+        id: "hara_ga_tatsu",
+        text: "腹が立つ",
+        reading: "はらがたつ",
+        html: "<ruby>腹<rt>はら</rt></ruby>が<ruby>立<rt>た</rt></ruby>つ",
+        correct: "おこること。いかりを感じること。",
+        distractors: [
+          "ごはんを食べすぎて、おなかがふくらむこと。",
+          "さかだちをして、体全体をまっすぐ伸ばすこと。",
+          "おなかがすいて、ぐうぐうと音がなること。"
+        ]
+      },
+      {
+        id: "kao_ga_hiroi",
+        text: "顔が広い",
+        reading: "かおがひろい",
+        html: "<ruby>顔<rt>かお</rt></ruby>が<ruby>広<rt>ひろ</rt></ruby>い",
+        correct: "知り合いがとても多いこと。",
+        distractors: [
+          "おでこやほっぺたが大きくて目立つこと。",
+          "大きな声で、遠くの人まで呼べること。",
+          "いろんな場所へ旅行に行くのが好きなこと。"
+        ]
+      },
+      {
+        id: "mune_ga_ippai",
+        text: "胸がいっぱい",
+        reading: "むねがいっぱい",
+        html: "<ruby>胸<rt>むね</rt></ruby>がいっぱい",
+        correct: "うれしさや感動で、心の中が満たされること。",
+        distractors: [
+          "おいしすぎて、おなかがはちきれそうなこと。",
+          "深呼吸をして、はいの中に空気をためること。",
+          "ポケットに宝物をたくさんつめこむこと。"
+        ]
+      },
+      {
+        id: "koshi_wo_ageru",
+        text: "腰を上げる",
+        reading: "こしをあげる",
+        html: "<ruby>腰<rt>こし</rt></ruby>を<ruby>上<rt>あ</rt></ruby>げる",
+        correct: "ようやく行動をはじめること。",
+        distractors: [
+          "たいそうの時間に、腰を高く持ち上げること。",
+          "いすに深くすわって、ゆっくり休むこと。",
+          "高いところにある荷物を、背伸びして取ること。"
+        ]
+      },
+      {
+        id: "te_wo_kasu",
+        text: "手を貸す",
+        reading: "てをかす",
+        html: "<ruby>手<rt>て</rt></ruby>を<ruby>貸<rt>か</rt></ruby>す",
+        correct: "ほかの人の仕事や作業を手伝うこと。",
+        distractors: [
+          "自分のてぶくろを、友だちにかしてあげること。",
+          "あくしゅをして、なかよしのしるしにすること。",
+          "何もせずに、うでを組んで見ていること。"
+        ]
+      },
+      {
+        id: "me_wo_maruku_suru",
+        text: "目を丸くする",
+        reading: "めをまるくする",
+        html: "<ruby>目<rt>め</rt></ruby>を<ruby>丸<rt>まる</rt></ruby>くする",
+        correct: "たいへんおどろくこと。",
+        distractors: [
+          "ねむたくなって、目をこすりながらあくびすること。",
+          "視力検査で、Cのすきまをじっと見ること。",
+          "メガネをきれいにふいて、よく見えるようにすること。"
+        ]
+      },
+      {
+        id: "shita_wo_maku",
+        text: "舌を巻く",
+        reading: "したをまく",
+        html: "<ruby>舌<rt>した</rt></ruby>を<ruby>巻<rt>ま</rt></ruby>く",
+        correct: "あまりにすばらしくて、感心したりおどろいたりすること。",
+        distractors: [
+          "早口言葉を言って、口がうまく回らないこと。",
+          "すっぱいレモンを食べて、顔をしかめること。",
+          "おいしそうな料理を見て、よだれが出ること。"
+        ]
+      },
+      {
+        id: "ago_ga_hazureru",
+        text: "あごが外れる",
+        reading: "あごがはずれる",
+        html: "あごが<ruby>外<rt>はず</rt></ruby>れる",
+        correct: "大笑いすること。",
+        distractors: [
+          "かたいものをかんで、歯がいたくなること。",
+          "おしゃべりをしすぎて、のどがかれること。",
+          "つまらなくて、大きなあくびばかり出ること。"
+        ]
+      },
+      {
+        id: "kata_wo_otosu",
+        text: "肩を落とす",
+        reading: "かたをおとす",
+        html: "<ruby>肩<rt>かた</rt></ruby>を<ruby>落<rt>お</rt></ruby>とす",
+        correct: "がっかりして元気をなくすこと。",
+        distractors: [
+          "重いランドセルをおろして、ほっとすること。",
+          "かたこりを直すために、ストレッチをすること。",
+          "力いっぱいボールを投げて、かたがいたくなること。"
+        ]
+      },
+      {
+        id: "kubi_wo_nagaku_suru",
+        text: "首を長くする",
+        reading: "くびをながくする",
+        html: "<ruby>首<rt>くび</rt></ruby>を<ruby>長<rt>なが</rt></ruby>くする",
+        correct: "まだかまだかと楽しみにして待つこと。",
+        distractors: [
+          "動物園のキリンを見て、背くらべをすること。",
+          "高いかべのむこうを、背伸びしてのぞくこと。",
+          "マフラーを何重にも巻いて、あたたかくすること。"
+        ]
+      },
+      {
+        id: "te_ni_ase_wo_nigiru",
+        text: "手に汗をにぎる",
+        reading: "てにあせをにぎる",
+        html: "<ruby>手<rt>て</rt></ruby>に<ruby>汗<rt>あせ</rt></ruby>をにぎる",
+        correct: "どうなるかとはらはらしながら見守ること。",
+        distractors: [
+          "暑い日に走って、体中から汗がふき出すこと。",
+          "水あそびをして、手がびしょぬれになること。",
+          "つなひきのロープを、力いっぱいひっぱること。"
+        ]
+      },
+      {
+        id: "mimi_ga_itai",
+        text: "耳が痛い",
+        reading: "みみがいたい",
+        html: "<ruby>耳<rt>みみ</rt></ruby>が<ruby>痛<rt>いた</rt></ruby>い",
+        correct: "自分の弱点や悪いところを言われて、つらく感じること。",
+        distractors: [
+          "冬の寒い風にあたって、耳が真っ赤になること。",
+          "大きな音楽を聞きすぎて、耳がキーンとすること。",
+          "耳そうじをしすぎて、ひりひりすること。"
+        ]
+      },
+      {
+        id: "me_ga_nai",
+        text: "目がない",
+        reading: "めがない",
+        html: "<ruby>目<rt>め</rt></ruby>がない",
+        correct: "それが大好きで、夢中になってしまうこと。",
+        distractors: [
+          "うっかりしていて、落とし物に気づかないこと。",
+          "暗やみの中で、まわりがまったく見えないこと。",
+          "きらいな食べ物を、どうしても食べられないこと。"
+        ]
+      },
+      {
+        id: "kuchi_ga_karui",
+        text: "口が軽い",
+        reading: "くちがかるい",
+        html: "<ruby>口<rt>くち</rt></ruby>が<ruby>軽<rt>かる</rt></ruby>い",
+        correct: "ひみつやうわさ話をすぐにしゃべってしまうこと。",
+        distractors: [
+          "元気よく大きな声で、歌をうたえること。",
+          "食べ物の好ききらいがなく、何でも食べること。",
+          "外国の言葉を、すらすらと話せること。"
+        ]
+      },
+      {
+        id: "hara_wo_kakaeru",
+        text: "腹をかかえる",
+        reading: "はらをかかえる",
+        html: "<ruby>腹<rt>はら</rt></ruby>をかかえる",
+        correct: "おなかをおさえて大笑いすること。",
+        distractors: [
+          "おなかがいたくて、うずくまってしまうこと。",
+          "大きなスイカを両うででしっかり持つこと。",
+          "食べすぎないように、ベルトをきつくしめること。"
+        ]
+      },
+      {
+        id: "te_wo_nuku",
+        text: "手を抜く",
+        reading: "てをぬく",
+        html: "<ruby>手<rt>て</rt></ruby>を<ruby>抜<rt>ぬ</rt></ruby>く",
+        correct: "やるべきことをきちんとやらず、いいかげんにすること。",
+        distractors: [
+          "ポケットに入れていた手を、さっと出すこと。",
+          "むずかしい仕事から、とちゅうで逃げること。",
+          "てぶくろをぬいで、素手で作業をすること。"
+        ]
+      },
+      {
+        id: "ashi_ga_bou_ni_naru",
+        text: "足が棒になる",
+        reading: "あしがぼうになる",
+        html: "<ruby>足<rt>あし</rt></ruby>が<ruby>棒<rt>ぼう</rt></ruby>になる",
+        correct: "長い時間歩いたり立ったりして、足がくたくたにつかれること。",
+        distractors: [
+          "足が速くなって、リレーの選手に選ばれること。",
+          "転んでしまい、足に大きなあざができること。",
+          "竹馬に乗って、バランスよく歩くこと。"
+        ]
+      },
+      {
+        id: "kao_ni_deru",
+        text: "顔に出る",
+        reading: "かおにでる",
+        html: "<ruby>顔<rt>かお</rt></ruby>に<ruby>出<rt>で</rt></ruby>る",
+        correct: "心の中で思っていることが、表情にすぐあらわれること。",
+        distractors: [
+          "はずかしくて、顔が真っ赤になってしまうこと。",
+          "テレビや新聞に、自分の写真が大きくのること。",
+          "かくれんぼで、かくれた場所から顔が見えること。"
+        ]
+      },
+      {
+        id: "ki_ga_au",
+        text: "気が合う",
+        reading: "きがあう",
+        html: "<ruby>気<rt>き</rt></ruby>が<ruby>合<rt>あ</rt></ruby>う",
+        correct: "性格や考え方が似ていて、いっしょにいて楽しいこと。",
+        distractors: [
+          "天気予報がぴったり当たって、遠足に行けること。",
+          "合唱コンクールで、みんなの歌声がそろうこと。",
+          "二人で同じ服を着て、双子のように見えること。"
+        ]
+      },
+      {
+        id: "ki_wo_kubaru",
+        text: "気を配る",
+        reading: "きをくばる",
+        html: "<ruby>気<rt>き</rt></ruby>を<ruby>配<rt>くば</rt></ruby>る",
+        correct: "まわりの人にこまかく注意して、親切にすること。",
+        distractors: [
+          "クラスの全員に、プリントを一枚ずつ渡すこと。",
+          "自分の持っているおやつを、みんなに分けること。",
+          "深呼吸をして、心を落ち着かせること。"
+        ]
+      },
+      {
+        id: "ki_ga_chiru",
+        text: "気が散る",
+        reading: "きがちる",
+        html: "<ruby>気<rt>き</rt></ruby>が<ruby>散<rt>ち</rt></ruby>る",
+        correct: "ほかのことに心がうばわれて、集中できないこと。",
+        distractors: [
+          "風が強くて、落ち葉がひらひら舞い散ること。",
+          "びっくりして、こわがってしまうこと。",
+          "たくさんの友だちに囲まれて、にぎやかなこと。"
+        ]
+      },
+      {
+        id: "kokoro_ni_kakeru",
+        text: "心にかける",
+        reading: "こころにかける",
+        html: "<ruby>心<rt>こころ</rt></ruby>にかける",
+        correct: "いつも気をつけて大切に思うこと。",
+        distractors: [
+          "忘れないように、メモ帳に大きく書くこと。",
+          "心配しすぎて、夜もねむれなくなること。",
+          "カギをかけて、大切なものをしまうこと。"
+        ]
+      },
+      {
+        id: "hone_wo_oru",
+        text: "骨を折る",
+        reading: "ほねをおる",
+        html: "<ruby>骨<rt>ほね</rt></ruby>を<ruby>折<rt>お</rt></ruby>る",
+        correct: "一生懸命に苦労して努力すること。",
+        distractors: [
+          "スポーツで転んで、けがをしてしまうこと。",
+          "木の枝をポキンと折って、工作をすること。",
+          "楽をして、かんたんに仕事を終わらせること。"
+        ]
+      },
+      {
+        id: "hana_ni_tsuku",
+        text: "鼻につく",
+        reading: "鼻につく",
+        html: "<ruby>鼻<rt>はな</rt></ruby>につく",
+        correct: "いばったりじまんしたりする態度が、いやな感じに思えること。",
+        distractors: [
+          "おいしそうなカレーのにおいが、へや中に広がること。",
+          "鼻の頭に、小さなほこりがくっつくこと。",
+          "かぜをひいて、鼻がつまって苦しいこと。"
+        ]
+      },
+      {
+        id: "mimi_ni_suru",
+        text: "耳にする",
+        reading: "みみにする",
+        html: "<ruby>耳<rt>みみ</rt></ruby>にする",
+        correct: "うわさや話を、ちょっと聞くこと。",
+        distractors: [
+          "イヤホンをつけて、好きな音楽をずっと聞くこと。",
+          "耳の後ろに手をあてて、大きな声を聞くこと。",
+          "聞いた話をすぐにメモ帳に書きとめること。"
+        ]
+      },
+      {
+        id: "kuchi_wo_soroeru",
+        text: "口をそろえる",
+        reading: "くちをそろえる",
+        html: "<ruby>口<rt>くち</rt></ruby>をそろえる",
+        correct: "みんなが同じ意見や言葉を言うこと。",
+        distractors: [
+          "みんなでいっせいに、大きな口をあけて笑うこと。",
+          "歯みがきをして、きれいな歯ならびにすること。",
+          "順番を守って、一人ずつゆっくり話すこと。"
+        ]
+      },
+      {
+        id: "te_wo_yaku",
+        text: "手を焼く",
+        reading: "てをやく",
+        html: "<ruby>手<rt>て</rt></ruby>を<ruby>焼<rt>や</rt></ruby>く",
+        correct: "あつかいにくくて、こまりはてること。",
+        distractors: [
+          "たき火に近づきすぎて、手が熱くなること。",
+          "夏休みに外で遊んで、手が真っ黒に日やけすること。",
+          "おもちやパンを、こんがりおいしく焼くこと。"
+        ]
+      },
+      {
+        id: "ashi_ga_deru",
+        text: "足が出る",
+        reading: "あしがでる",
+        html: "<ruby>足<rt>あし</rt></ruby>が<ruby>出<rt>で</rt></ruby>る",
+        correct: "予定していたお金よりも、多く使ってしまうこと。",
+        distractors: [
+          "ふとんが小さくて、つま先が外にはみ出すこと。",
+          "かくしていたひみつが、みんなにバレること。",
+          "かけっこで、スタートの合図より先に走り出すこと。"
+        ]
+      },
+      {
+        id: "me_ga_takai",
+        text: "目が高い",
+        reading: "めがたかい",
+        html: "<ruby>目<rt>め</rt></ruby>が<ruby>高<rt>たか</rt></ruby>い",
+        correct: "よいものを見わけるすぐれた力があること。",
+        distractors: [
+          "背が高くて、上のほうの棚までよく見えること。",
+          "遠くにある小さな星まで、はっきり見えること。",
+          "いつも上ばかり見て歩いて、つまずくこと。"
+        ]
+      },
+      {
+        id: "koshi_ga_hikui",
+        text: "腰が低い",
+        reading: "こしがひくい",
+        html: "<ruby>腰<rt>こし</rt></ruby>が<ruby>低<rt>ひく</rt></ruby>い",
+        correct: "いばらず、だれに対してもていねいな態度をとること。",
+        distractors: [
+          "ひざを曲げて、低い姿勢で歩くこと。",
+          "背が低くて、小さいいすにすわること。",
+          "自信がなくて、いつも下を向いていること。"
+        ]
+      },
+      {
+        id: "mune_wo_nadeorosu",
+        text: "胸をなでおろす",
+        reading: "むねをなでおろす",
+        html: "<ruby>胸<rt>むね</rt></ruby>をなでおろす",
+        correct: "心配事がなくなって、ほっと安心すること。",
+        distractors: [
+          "走ったあとに、ドキドキする心臓をおさえること。",
+          "洋服についたゴミを、手で払い落とすこと。",
+          "おなかがすいて、胸のあたりをさすること。"
+        ]
+      },
+      {
+        id: "hara_ga_suwaru",
+        text: "腹がすわる",
+        reading: "はらがすわる",
+        html: "<ruby>腹<rt>はら</rt></ruby>がすわる",
+        correct: "どんなことが起きても、あわてず落ち着いていること。",
+        distractors: [
+          "ごはんをたくさん食べて、動けなくなること。",
+          "いすにどっしりとすわって、ねむってしまうこと。",
+          "腹筋運動をして、おなかが筋肉痛になること。"
+        ]
+      },
+      {
+        id: "kubi_wo_kashigeru",
+        text: "首をかしげる",
+        reading: "くびをかしげる",
+        html: "<ruby>首<rt>くび</rt></ruby>をかしげる",
+        correct: "ふしぎに思ったり、うたがったりすること。",
+        distractors: [
+          "ねちがえて、首が横に曲がったままになること。",
+          "写真をとるときに、かわいくポーズをとること。",
+          "ねむくなって、こっくりこっくりと居眠りすること。"
+        ]
+      },
+      {
+        id: "te_ga_todoku",
+        text: "手がとどく",
+        reading: "てがとどく",
+        html: "<ruby>手<rt>て</rt></ruby>がとどく",
+        correct: "すみずみまで注意や世話がいきわたること。",
+        distractors: [
+          "ジャンプをして、高い木の枝にさわれること。",
+          "遠くに住んでいる友だちに、手紙を送ること。",
+          "背伸びをして、黒板の上のほうを消すこと。"
+        ]
+      },
+      {
+        id: "kao_wo_tsubusu",
+        text: "顔をつぶす",
+        reading: "かおをつぶす",
+        html: "<ruby>顔<rt>かお</rt></ruby>をつぶす",
+        correct: "人の面目やほこりを傷つけて、はずかしい思いをさせること。",
+        distractors: [
+          "変な顔をして、みんなを大笑いさせること。",
+          "ボールが顔にあたって、鼻血が出ること。",
+          "ねんどで作った顔を、ぺちゃんこにすること。"
+        ]
+      },
+      {
+        id: "ki_ga_ki_de_nai",
+        text: "気が気でない",
+        reading: "きがきでない",
+        html: "<ruby>気<rt>き</rt></ruby>が<ruby>気<rt>き</rt></ruby>でない",
+        correct: "心配や不安で、心が落ち着かないこと。",
+        distractors: [
+          "元気がなくなって、ぼんやりしていること。",
+          "風が強くて、天気のことが気になること。",
+          "楽しすぎて、時間をわすれてしまうこと。"
+        ]
+      },
+      {
+        id: "me_wo_hosomeru",
+        text: "目を細める",
+        reading: "めをほそめる",
+        html: "<ruby>目<rt>め</rt></ruby>を<ruby>細<rt>ほそ</rt></ruby>める",
+        correct: "うれしそうに、やさしい笑顔で見つめること。",
+        distractors: [
+          "まぶしい太陽の光を見て、顔をしかめること。",
+          "視力が悪くなって、遠くの文字を見ようとすること。",
+          "ねむいのをがまんして、目をとじかけること。"
+        ]
+      },
+      {
+        id: "ashi_wo_arau",
+        text: "足を洗う",
+        reading: "あしをあらう",
+        html: "<ruby>足<rt>あし</rt></ruby>を<ruby>洗<rt>あら</rt></ruby>う",
+        correct: "これまでの悪い行いや仕事をすっかりやめること。",
+        distractors: [
+          "どろんこ遊びをしたあと、水道できれいにすること。",
+          "おふろに入って、一日のつかれをとること。",
+          "くつしたをはきかえて、さっぱりすること。"
+        ]
+      }
+    ];
+
+    // 元々の意味を表すSVGイラスト生成関数（全60問対応）
+    function getIllustrationSVG(id) {
+      switch (id) {
+        case "atama_wo_hineru":
+          return `<svg viewBox="0 0 220 130" xmlns="http://www.w3.org/2000/svg">
+            <rect width="220" height="130" fill="#fefce8"/>
+            <circle cx="110" cy="68" r="34" fill="#fde68a" stroke="#92400e" stroke-width="3"/>
+            <path d="M84 52 Q110 30 136 52" fill="#451a03"/>
+            <circle cx="99" cy="66" r="3.5" fill="#1e293b"/>
+            <circle cx="121" cy="66" r="3.5" fill="#1e293b"/>
+            <path d="M103 82 Q110 77 117 82" stroke="#1e293b" stroke-width="2.5" fill="none"/>
+            <path d="M55 45 C42 45, 42 75, 58 75" stroke="#ef4444" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+            <polygon points="58,70 67,76 57,80" fill="#ef4444"/>
+            <path d="M165 75 C178 75, 178 45, 162 45" stroke="#ef4444" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+            <polygon points="162,40 153,45 163,50" fill="#ef4444"/>
+            <text x="110" y="22" font-size="14" font-weight="bold" fill="#b45309" text-anchor="middle">う〜ん…（頭をひねる）</text>
+          </svg>`;
+        case "kokoro_ga_odoru":
+          return `<svg viewBox="0 0 220 130" xmlns="http://www.w3.org/2000/svg">
+            <rect width="220" height="130" fill="#fff1f2"/>
+            <path d="M110 105 C70 78, 55 48, 80 33 C95 24, 108 36, 110 45 C112 36, 125 24, 140 33 C165 48, 150 78, 110 105 Z" fill="#fb7185" stroke="#be123c" stroke-width="3"/>
+            <path d="M68 55 L52 45 M66 72 L48 75 M152 55 L168 45 M154 72 L172 75" stroke="#f59e0b" stroke-width="3" stroke-linecap="round"/>
+            <text x="45" y="34" font-size="16" fill="#e11d48">♪</text>
+            <text x="168" y="34" font-size="16" fill="#e11d48">♫</text>
+            <text x="110" y="122" font-size="12" font-weight="bold" fill="#be123c" text-anchor="middle">わくわくダンス！</text>
+          </svg>`;
+        case "uma_ga_au":
+          return `<svg viewBox="0 0 220 130" xmlns="http://www.w3.org/2000/svg">
+            <rect width="220" height="130" fill="#ecfdf5"/>
+            <ellipse cx="68" cy="70" rx="22" ry="26" fill="#b45309" stroke="#78350f" stroke-width="2.5"/>
+            <polygon points="52,48 56,30 66,46" fill="#b45309" stroke="#78350f" stroke-width="2"/>
+            <polygon points="70,46 80,30 84,48" fill="#b45309" stroke="#78350f" stroke-width="2"/>
+            <circle cx="62" cy="64" r="3" fill="#1e293b"/>
+            <ellipse cx="152" cy="70" rx="22" ry="26" fill="#d97706" stroke="#78350f" stroke-width="2.5"/>
+            <polygon points="136,48 140,30 150,46" fill="#d97706" stroke="#78350f" stroke-width="2"/>
+            <polygon points="154,46 164,30 168,48" fill="#d97706" stroke="#78350f" stroke-width="2"/>
+            <circle cx="158" cy="64" r="3" fill="#1e293b"/>
+            <path d="M110 52 C102 42, 92 48, 110 64 C128 48, 118 42, 110 52 Z" fill="#ef4444"/>
+            <text x="110" y="116" font-size="12" font-weight="bold" fill="#065f46" text-anchor="middle">息がぴったり合う2頭</text>
+          </svg>`;
+        case "karitekita_neko":
+          return `<svg viewBox="0 0 220 130" xmlns="http://www.w3.org/2000/svg">
+            <rect width="220" height="130" fill="#f8fafc"/>
+            <ellipse cx="110" cy="82" rx="24" ry="28" fill="#cbd5e1" stroke="#475569" stroke-width="2.5"/>
+            <circle cx="110" cy="48" r="20" fill="#cbd5e1" stroke="#475569" stroke-width="2.5"/>
+            <polygon points="93,35 95,18 106,30" fill="#cbd5e1" stroke="#475569" stroke-width="2"/>
+            <polygon points="127,35 125,18 114,30" fill="#cbd5e1" stroke="#475569" stroke-width="2"/>
+            <circle cx="103" cy="46" r="2.5" fill="#1e293b"/>
+            <circle cx="117" cy="46" r="2.5" fill="#1e293b"/>
+            <path d="M106 54 Q110 57 114 54" stroke="#1e293b" stroke-width="2" fill="none"/>
+            <line x1="103" y1="75" x2="103" y2="108" stroke="#475569" stroke-width="2.5"/>
+            <line x1="117" y1="75" x2="117" y2="108" stroke="#475569" stroke-width="2.5"/>
+            <text x="110" y="124" font-size="12" font-weight="bold" fill="#334155" text-anchor="middle">おとなしくちょこん…</text>
+          </svg>`;
+        case "uri_futatsu":
+          return `<svg viewBox="0 0 220 130" xmlns="http://www.w3.org/2000/svg">
+            <rect width="220" height="130" fill="#f0fdf4"/>
+            <ellipse cx="76" cy="64" rx="28" ry="38" fill="#4ade80" stroke="#15803d" stroke-width="3"/>
+            <path d="M68 28 Q64 64 68 100 M84 28 Q88 64 84 100" stroke="#166534" stroke-width="2.5" fill="none"/>
+            <ellipse cx="144" cy="64" rx="28" ry="38" fill="#4ade80" stroke="#15803d" stroke-width="3"/>
+            <path d="M136 28 Q132 64 136 100 M152 28 Q156 64 152 100" stroke="#166534" stroke-width="2.5" fill="none"/>
+            <text x="110" y="120" font-size="12" font-weight="bold" fill="#15803d" text-anchor="middle">割ったウリのようにそっくり！</text>
+          </svg>`;
+        case "mi_wo_musubu":
+          return `<svg viewBox="0 0 220 130" xmlns="http://www.w3.org/2000/svg">
+            <rect width="220" height="130" fill="#fefce8"/>
+            <path d="M35 55 Q110 35 185 55" stroke="#78350f" stroke-width="5" fill="none" stroke-linecap="round"/>
+            <ellipse cx="80" cy="40" rx="14" ry="7" fill="#22c55e" transform="rotate(-20 80 40)"/>
+            <ellipse cx="145" cy="40" rx="14" ry="7" fill="#22c55e" transform="rotate(20 145 40)"/>
+            <circle cx="110" cy="78" r="24" fill="#ef4444" stroke="#991b1b" stroke-width="2.5"/>
+            <path d="M110 46 L110 56" stroke="#78350f" stroke-width="3"/>
+            <circle cx="102" cy="70" r="4" fill="#fca5a5"/>
+            <text x="110" y="120" font-size="12" font-weight="bold" fill="#991b1b" text-anchor="middle">りっぱな実がなった！</text>
+          </svg>`;
+        case "enjin_ga_kakaru":
+          return `<svg viewBox="0 0 220 130" xmlns="http://www.w3.org/2000/svg">
+            <rect width="220" height="130" fill="#eff6ff"/>
+            <rect x="65" y="45" width="90" height="50" rx="10" fill="#64748b" stroke="#1e293b" stroke-width="3"/>
+            <circle cx="95" cy="70" r="13" fill="#cbd5e1" stroke="#1e293b" stroke-width="2.5"/>
+            <circle cx="130" cy="70" r="10" fill="#cbd5e1" stroke="#1e293b" stroke-width="2.5"/>
+            <polygon points="48,42 58,34 55,46 66,46 53,58 56,47 45,47" fill="#facc15" stroke="#ca8a04" stroke-width="1.5"/>
+            <polygon points="168,42 178,34 175,46 186,46 173,58 176,47 165,47" fill="#facc15" stroke="#ca8a04" stroke-width="1.5"/>
+            <text x="110" y="26" font-size="13" font-weight="bold" fill="#1d4ed8" text-anchor="middle">ブルルン！始動！</text>
+          </svg>`;
+        case "mesu_wo_ireru":
+          return `<svg viewBox="0 0 220 130" xmlns="http://www.w3.org/2000/svg">
+            <rect width="220" height="130" fill="#f0f9ff"/>
+            <line x1="65" y1="88" x2="155" y2="88" stroke="#dc2626" stroke-width="3" stroke-dasharray="6,4"/>
+            <g transform="rotate(-35 110 60)">
+              <rect x="65" y="54" width="60" height="10" rx="3" fill="#0284c7" stroke="#0f172a" stroke-width="2"/>
+              <path d="M125 54 L152 59 L125 64 Z" fill="#e2e8f0" stroke="#0f172a" stroke-width="2"/>
+            </g>
+            <text x="110" y="116" font-size="12" font-weight="bold" fill="#0369a1" text-anchor="middle">悪い部分を直すための手術</text>
+          </svg>`;
+        case "naka_wo_torimotsu":
+          return `<svg viewBox="0 0 220 130" xmlns="http://www.w3.org/2000/svg">
+            <rect width="220" height="130" fill="#fdf4ff"/>
+            <circle cx="52" cy="54" r="16" fill="#fde68a" stroke="#92400e" stroke-width="2"/>
+            <circle cx="110" cy="48" r="18" fill="#bae6fd" stroke="#0369a1" stroke-width="2.5"/>
+            <circle cx="168" cy="54" r="16" fill="#fecdd3" stroke="#be123c" stroke-width="2"/>
+            <path d="M68 68 Q90 82 102 68" stroke="#0369a1" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+            <path d="M152 68 Q130 82 118 68" stroke="#0369a1" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+            <text x="110" y="114" font-size="12" font-weight="bold" fill="#6b21a8" text-anchor="middle">二人の手をつなぐ橋わたし</text>
+          </svg>`;
+        case "eri_wo_tadasu":
+          return `<svg viewBox="0 0 220 130" xmlns="http://www.w3.org/2000/svg">
+            <rect width="220" height="130" fill="#f8fafc"/>
+            <path d="M62 105 L75 45 L110 62 L145 45 L158 105 Z" fill="#1e3a8a" stroke="#0f172a" stroke-width="2.5"/>
+            <polygon points="82,42 110,62 96,74 74,55" fill="#ffffff" stroke="#0f172a" stroke-width="2"/>
+            <polygon points="138,42 110,62 124,74 146,55" fill="#ffffff" stroke="#0f172a" stroke-width="2"/>
+            <text x="110" y="26" font-size="13" font-weight="bold" fill="#1e3a8a" text-anchor="middle">シャキッ！とえりを直す</text>
+          </svg>`;
+        case "rou_wo_negirau":
+          return `<svg viewBox="0 0 220 130" xmlns="http://www.w3.org/2000/svg">
+            <rect width="220" height="130" fill="#fffbeb"/>
+            <circle cx="76" cy="54" r="18" fill="#fde68a" stroke="#92400e" stroke-width="2"/>
+            <circle cx="144" cy="54" r="18" fill="#fed7aa" stroke="#9a3412" stroke-width="2"/>
+            <rect x="98" y="64" width="22" height="24" rx="4" fill="#22c55e" stroke="#14532d" stroke-width="2"/>
+            <path d="M102 56 Q106 48 102 42 M112 56 Q116 48 112 42" stroke="#94a3b8" stroke-width="2" fill="none"/>
+            <text x="110" y="114" font-size="12" font-weight="bold" fill="#9a3412" text-anchor="middle">「おつかれさま！」とお茶</text>
+          </svg>`;
+        case "sewa_wo_yaku":
+          return `<svg viewBox="0 0 220 130" xmlns="http://www.w3.org/2000/svg">
+            <rect width="220" height="130" fill="#fff7ed"/>
+            <circle cx="110" cy="66" r="22" fill="#fde68a" stroke="#92400e" stroke-width="2.5"/>
+            <rect x="44" y="34" width="26" height="26" rx="6" fill="#38bdf8"/>
+            <rect x="150" y="34" width="26" height="26" rx="6" fill="#fb7185"/>
+            <rect x="44" y="76" width="26" height="26" rx="6" fill="#4ade80"/>
+            <rect x="150" y="76" width="26" height="26" rx="6" fill="#facc15"/>
+            <text x="110" y="118" font-size="12" font-weight="bold" fill="#c2410c" text-anchor="middle">あれこれめんどうをみる</text>
+          </svg>`;
+        case "atama_wo_hiyasu":
+          return `<svg viewBox="0 0 220 130" xmlns="http://www.w3.org/2000/svg">
+            <rect width="220" height="130" fill="#ecfeff"/>
+            <circle cx="110" cy="74" r="28" fill="#fde68a" stroke="#92400e" stroke-width="2.5"/>
+            <path d="M98 72 L104 72 M116 72 L122 72 M103 86 Q110 91 117 86" stroke="#1e293b" stroke-width="2.5" fill="none"/>
+            <ellipse cx="110" cy="40" rx="28" ry="12" fill="#38bdf8" stroke="#0284c7" stroke-width="2.5"/>
+            <text x="110" y="120" font-size="12" font-weight="bold" fill="#0369a1" text-anchor="middle">氷のうで頭をクールダウン</text>
+          </svg>`;
+        case "neko_ni_koban":
+          return `<svg viewBox="0 0 220 130" xmlns="http://www.w3.org/2000/svg">
+            <rect width="220" height="130" fill="#fefce8"/>
+            <circle cx="76" cy="68" r="24" fill="#f8fafc" stroke="#475569" stroke-width="2.5"/>
+            <polygon points="56,50 58,32 70,45" fill="#f8fafc" stroke="#475569" stroke-width="2"/>
+            <polygon points="96,50 94,32 82,45" fill="#f8fafc" stroke="#475569" stroke-width="2"/>
+            <circle cx="68" cy="64" r="2.5" fill="#1e293b"/>
+            <circle cx="84" cy="64" r="2.5" fill="#1e293b"/>
+            <ellipse cx="148" cy="68" rx="22" ry="30" fill="#facc15" stroke="#b45309" stroke-width="3"/>
+            <rect x="142" y="62" width="12" height="12" fill="none" stroke="#b45309" stroke-width="2"/>
+            <text x="110" y="118" font-size="12" font-weight="bold" fill="#854d0e" text-anchor="middle">猫には小判の価値がわからない</text>
+          </svg>`;
+        case "michikusa_wo_kuu":
+          return `<svg viewBox="0 0 220 130" xmlns="http://www.w3.org/2000/svg">
+            <rect width="220" height="130" fill="#f0fdf4"/>
+            <ellipse cx="88" cy="66" rx="24" ry="20" fill="#b45309" stroke="#78350f" stroke-width="2.5"/>
+            <path d="M126 98 L132 74 M134 98 L134 70 M142 98 L138 74" stroke="#16a34a" stroke-width="3.5" stroke-linecap="round"/>
+            <text x="110" y="120" font-size="12" font-weight="bold" fill="#166534" text-anchor="middle">道ばたの草を食べて寄り道</text>
+          </svg>`;
+        case "me_ga_mawaru":
+          return `<svg viewBox="0 0 220 130" xmlns="http://www.w3.org/2000/svg">
+            <rect width="220" height="130" fill="#fdf2f8"/>
+            <circle cx="110" cy="66" r="30" fill="#fde68a" stroke="#92400e" stroke-width="2.5"/>
+            <path d="M98 62 C98 58, 103 58, 103 62 C103 67, 94 67, 94 61 C94 54, 106 54, 106 63" stroke="#1e293b" stroke-width="2" fill="none"/>
+            <path d="M120 62 C120 58, 125 58, 125 62 C125 67, 116 67, 116 61 C116 54, 128 54, 128 63" stroke="#1e293b" stroke-width="2" fill="none"/>
+            <text x="110" y="118" font-size="12" font-weight="bold" fill="#9d174d" text-anchor="middle">ぐるぐる目が回るいそがしさ</text>
+          </svg>`;
+        case "ude_wo_furuu":
+          return `<svg viewBox="0 0 220 130" xmlns="http://www.w3.org/2000/svg">
+            <rect width="220" height="130" fill="#fff7ed"/>
+            <path d="M62 84 Q88 94 114 76 L132 48 L116 42 L102 64 Q84 72 62 66 Z" fill="#fed7aa" stroke="#9a3412" stroke-width="2.5"/>
+            <path d="M88 64 Q100 50 112 64" fill="#fdba74" stroke="#9a3412" stroke-width="2.5"/>
+            <text x="110" y="118" font-size="12" font-weight="bold" fill="#9a3412" text-anchor="middle">力いっぱい腕をふるう！</text>
+          </svg>`;
+        case "hana_ga_takai":
+          return `<svg viewBox="0 0 220 130" xmlns="http://www.w3.org/2000/svg">
+            <rect width="220" height="130" fill="#eff6ff"/>
+            <circle cx="88" cy="64" r="28" fill="#fde68a" stroke="#92400e" stroke-width="2.5"/>
+            <path d="M112 58 L164 56 Q170 62 164 68 L112 68" fill="#fde68a" stroke="#92400e" stroke-width="2.5"/>
+            <text x="110" y="118" font-size="12" font-weight="bold" fill="#1d4ed8" text-anchor="middle">えっへん！鼻が伸びる</text>
+          </svg>`;
+        case "mimi_wo_sumasu":
+          return `<svg viewBox="0 0 220 130" xmlns="http://www.w3.org/2000/svg">
+            <rect width="220" height="130" fill="#f0fdf4"/>
+            <path d="M96 34 C122 30, 134 52, 126 74 C120 90, 102 94, 96 80" fill="#fed7aa" stroke="#9a3412" stroke-width="3"/>
+            <path d="M142 50 Q152 62 142 74 M154 42 Q168 62 154 82" stroke="#0284c7" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+            <text x="110" y="118" font-size="12" font-weight="bold" fill="#065f46" text-anchor="middle">小さな音も聞きのがさない！</text>
+          </svg>`;
+        case "ashi_wo_hipparu":
+          return `<svg viewBox="0 0 220 130" xmlns="http://www.w3.org/2000/svg">
+            <rect width="220" height="130" fill="#fef2f2"/>
+            <rect x="85" y="42" width="14" height="44" rx="6" fill="#3b82f6"/>
+            <ellipse cx="88" cy="88" rx="14" ry="7" fill="#1e3a8a"/>
+            <path d="M155 82 L114 82" stroke="#ef4444" stroke-width="6" stroke-linecap="round"/>
+            <text x="110" y="118" font-size="12" font-weight="bold" fill="#991b1b" text-anchor="middle">進む人の足を後ろから引く</text>
+          </svg>`;
+        default: {
+          // 残りの40問も慣用句のキーワードに合わせたカラフルな専用イラストを自動生成
+          const item = IDIOMS_DATA.find((d) => d.id === id);
+          const label = item ? item.text : "";
+          let icon = "💡";
+          let bg = "#f0f9ff";
+          let accent = "#0284c7";
+          if (label.includes("手")) { icon = "✋"; bg = "#fff7ed"; accent = "#c2410c"; }
+          else if (label.includes("口")) { icon = "👄"; bg = "#fff1f2"; accent = "#be123c"; }
+          else if (label.includes("腹")) { icon = "😆"; bg = "#fefce8"; accent = "#a16207"; }
+          else if (label.includes("顔")) { icon = "😊"; bg = "#fdf4ff"; accent = "#86198f"; }
+          else if (label.includes("胸") || label.includes("心")) { icon = "💓"; bg = "#fff1f2"; accent = "#e11d48"; }
+          else if (label.includes("腰")) { icon = "🧍"; bg = "#f0fdf4"; accent = "#15803d"; }
+          else if (label.includes("目")) { icon = "👀"; bg = "#eff6ff"; accent = "#1d4ed8"; }
+          else if (label.includes("舌") || label.includes("あご")) { icon = "😋"; bg = "#fefce8"; accent = "#b45309"; }
+          else if (label.includes("肩") || label.includes("首")) { icon = "🦒"; bg = "#ecfdf5"; accent = "#047857"; }
+          else if (label.includes("耳")) { icon = "👂"; bg = "#f0f9ff"; accent = "#0369a1"; }
+          else if (label.includes("足")) { icon = "👟"; bg = "#fef2f2"; accent = "#b91c1c"; }
+          else if (label.includes("気")) { icon = "✨"; bg = "#f5f3ff"; accent = "#6d28d9"; }
+          else if (label.includes("骨")) { icon = "🦴"; bg = "#f8fafc"; accent = "#334155"; }
+          else if (label.includes("鼻")) { icon = "👃"; bg = "#fffbeb"; accent = "#b45309"; }
+          return `<svg viewBox="0 0 220 130" xmlns="http://www.w3.org/2000/svg">
+            <rect width="220" height="130" fill="${bg}"/>
+            <circle cx="110" cy="54" r="32" fill="#ffffff" stroke="${accent}" stroke-width="3"/>
+            <text x="110" y="66" font-size="34" text-anchor="middle">${icon}</text>
+            <text x="110" y="114" font-size="13" font-weight="bold" fill="${accent}" text-anchor="middle">${label}</text>
+          </svg>`;
+        }
+      }
+    }
+
+    // ==========================================
+    // 3. 世界の都市伝説バケモノカードデータ（全60枚）
+    // ==========================================
+    const MONSTER_CARDS = [
+      { id: "cthulhu", no: "No.01", name: "クトゥルフ", origin: "南太平洋・ルルイエ", desc: "タコのような頭部とドラゴンの翼をもつ、深海にねむる巨大な旧支配者。" },
+      { id: "bigfoot", no: "No.02", name: "ビッグフット", origin: "北アメリカ・ロッキー山脈", desc: "身長2〜3メートル、全身がこい茶色の体毛でおおわれた謎の類人猿。" },
+      { id: "nessie", no: "No.03", name: "ネッシー", origin: "イギリス・ネス湖", desc: "長い首とコブをもつ、古代の首長竜プレシオサウルスに似た湖の怪獣。" },
+      { id: "mothman", no: "No.04", name: "モスマン", origin: "アメリカ・ポイントプレザント", desc: "暗やみで赤く光る大きな目と、背中に巨大な蛾の翼をもつ空飛ぶ怪人。" },
+      { id: "chupacabra", no: "No.05", name: "チュパカブラ", origin: "プエルトリコ・中南米", desc: "背中に鋭いトゲがならび、赤い目をもつ吸血UMA（未確認動物）。" },
+      { id: "jersey_devil", no: "No.06", name: "ジャージー・デビル", origin: "アメリカ・ニュージャージー州", desc: "馬のような顔、コウモリの翼、ヤギのひづめをもつ森の伝説の怪物。" },
+      { id: "flatwoods", no: "No.07", name: "フラットウッズ・モンスター", origin: "アメリカ・ウェストバージニア州", desc: "スペード型のフードをかぶり、緑色の光とともに浮遊する3メートルの宇宙人。" },
+      { id: "death_worm", no: "No.08", name: "モンゴリアン・デス・ワーム", origin: "モンゴル・ゴビ砂漠", desc: "真っ赤な体で砂の中を移動し、電撃や毒をはなつといわれる砂漠の巨大生物。" },
+      { id: "yeti", no: "No.09", name: "イエティ（雪男）", origin: "ヒマラヤ山脈", desc: "万年雪におおわれた高山にすむと伝えられる、白い毛におおわれた巨人。" },
+      { id: "skyfish", no: "No.10", name: "スカイフィッシュ", origin: "世界各地の空", desc: "細長い棒状の体と波打つヒレをもち、超高速で空を飛びまわる謎の生物。" },
+      { id: "kraken", no: "No.11", name: "クラーケン", origin: "北欧・北大西洋", desc: "巨大な船さえも長い触手で海の中へ引きずりこむ、伝説の超巨大イカ怪物。" },
+      { id: "kappa", no: "No.12", name: "河童（カッパ）", origin: "日本・全国の川や沼", desc: "頭に水が入ったお皿があり、背中に甲羅をもつ日本の水辺の妖怪。" },
+      { id: "tsuchinoko", no: "No.13", name: "ツチノコ", origin: "日本・山林や草むら", desc: "胴体がビールびんのように太く、ジャンプが得意な日本の幻のヘビ。" },
+      { id: "dracula", no: "No.14", name: "ドラキュラ伯爵", origin: "ルーマニア・トランシルヴァニア", desc: "黒いマントをまとい、コウモリに姿を変えて夜の城を飛びまわる吸血鬼。" },
+      { id: "werewolf", no: "No.15", name: "ウェアウルフ（人狼）", origin: "ヨーロッパ各地の森", desc: "満月の夜になると人間の姿から巨大なオオカミ男へ変身する伝説の怪物。" },
+      { id: "golem", no: "No.16", name: "ゴーレム", origin: "チェコ・プラハ", desc: "粘土と魔法の呪文によって作り出された、怪力を誇る無敵の泥人形巨人。" },
+      { id: "medusa", no: "No.17", name: "メデューサ", origin: "ギリシャ神話・地の果て", desc: "無数の生きたヘビを髪の毛にもち、目を合わせた者を石に変えてしまう怪物。" },
+      { id: "minotaur", no: "No.18", name: "ミノタウロス", origin: "ギリシャ・クレタ島の迷宮", desc: "牛の頭と人間の体をもち、地下迷宮ラビリンスの奥にすむ伝説の怪人。" },
+      { id: "basilisk", no: "No.19", name: "バジリスク", origin: "ヨーロッパ・砂漠と廃墟", desc: "王冠のようなトサカをもつ「ヘビの王」。にらみや息で草木も枯らす。" },
+      { id: "manticore", no: "No.20", name: "マンティコア", origin: "ペルシャ・インドの密林", desc: "人の顔、ライオンの体、サソリの毒針の尻尾をもつ恐ろしい合成獣。" },
+      { id: "quetzalcoatl", no: "No.21", name: "ケツァルコアトル", origin: "メキシコ・古代アステカ", desc: "美しい緑の羽毛とヘビの体をあわせもつ、風と知恵をつかさどる翼の竜神。" },
+      { id: "cerberus", no: "No.22", name: "ケルベロス", origin: "ギリシャ・冥界の入り口", desc: "3つの頭とヘビの尾をもち、冥界の門を昼も夜も守りつづける巨大な番犬。" },
+      { id: "phoenix", no: "No.23", name: "フェニックス（不死鳥）", origin: "エジプト・アラビアの砂漠", desc: "黄金と真紅の炎の翼をもち、灰の中から何度でもよみがえる永遠の霊鳥。" },
+      { id: "unicorn", no: "No.24", name: "ユニコーン", origin: "ヨーロッパ・深い森", desc: "純白の馬の額にらせん状の鋭い一本の角をもつ、気高く神秘的な一角獣。" },
+      { id: "griffin", no: "No.25", name: "グリフォン", origin: "中央アジア・黄金の山", desc: "ワシの頭と翼、ライオンの体をもつ、黄金の宝を守りぬく天空の王者。" },
+      { id: "chimera", no: "No.26", name: "キマイラ", origin: "ギリシャ・リュキアの山", desc: "ライオンの頭、背中のヤギの頭、ヘビの尻尾をもち、口から炎をふく怪獣。" },
+      { id: "hydra", no: "No.27", name: "ヒュドラ", origin: "ギリシャ・レルネの沼", desc: "9つの頭をもつ巨大な水蛇。首を切られてもすぐに2つに生えかわる不死身の怪物。" },
+      { id: "sphinx", no: "No.28", name: "スフィンクス", origin: "エジプト・ギザの砂漠", desc: "人間の顔とライオンの体、ワシの翼をもち、旅人になぞなぞを出す守護獣。" },
+      { id: "pegasus", no: "No.29", name: "ペガサス", origin: "ギリシャ・ヘリコン山", desc: "背中に大きな純白の翼をもち、雷鳴とともに大空をかける神話の天馬。" },
+      { id: "leviathan", no: "No.30", name: "リヴァイアサン", origin: "中東・深い海の底", desc: "かたいうろこと巨大なヒレをもち、海全体をうねらせる伝説の超巨大海竜。" },
+      { id: "behemoth", no: "No.31", name: "ベヒモス", origin: "中東・千の山々", desc: "鋼のような骨と巨体をもち、大地をゆるがして歩く陸の最強の巨獣。" },
+      { id: "western_dragon", no: "No.32", name: "ドラゴン（西洋竜）", origin: "ヨーロッパ・火山の洞窟", desc: "こうもりのような翼と鋭い爪をもち、灼熱の炎を吐き出す伝説の竜。" },
+      { id: "wyvern", no: "No.33", name: "ワイバーン", origin: "イギリス・断崖の城", desc: "大きな翼と2本の足、毒針のついた尾をもつ、素早く空を舞う飛竜。" },
+      { id: "gargoyle", no: "No.34", name: "ガーゴイル", origin: "フランス・パリの聖堂", desc: "昼は建物の屋根で石像として眠り、夜になると動き出して魔物を追い払う怪獣。" },
+      { id: "banshee", no: "No.35", name: "バンシー", origin: "アイルランド・霧の荒野", desc: "長い白髪をなびかせ、月夜に不思議な歌声で未来を知らせる妖精。" },
+      { id: "dullahan", no: "No.36", name: "デュラハン", origin: "アイルランド・夜の街道", desc: "自分の頭を小わきにかかえ、黒い馬に乗って夜道を駆けぬける首なし騎士。" },
+      { id: "kelpie", no: "No.37", name: "ケルピー", origin: "スコットランド・湖と川", desc: "ぬれた黒い馬の姿で水辺にあらわれる、ケルト神話の不思議な水の精霊。" },
+      { id: "wendigo", no: "No.38", name: "ウィンディゴ", origin: "カナダ・北米の雪深い森", desc: "シカの角と氷のように冷たい体をもち、吹雪とともに現れる森の精霊。" },
+      { id: "thunderbird", no: "No.39", name: "サンダーバード", origin: "北米・五大湖の雷雲", desc: "羽ばたくと雷鳴がとどろき、目から稲妻をはなつ巨大な雷の霊鳥。" },
+      { id: "mokele", no: "No.40", name: "モケーレ・ムベンベ", origin: "アフリカ・コンゴ盆地の湿地", desc: "ジャングルの奥地に生き残っているといわれる、恐竜に似た謎の巨大生物。" },
+      { id: "ogopogo", no: "No.41", name: "オゴポゴ", origin: "カナダ・オカナガン湖", desc: "緑色のうろこと馬のような頭をもち、波を立てて泳ぐカナダの湖の怪獣。" },
+      { id: "champ", no: "No.42", name: "チャンプ", origin: "アメリカ・シャンプレーン湖", desc: "19世紀から多くの目撃記録が残る、首の長いアメリカの湖のUMA。" },
+      { id: "new_nessie", no: "No.43", name: "ニューネッシー", origin: "ニュージーランド沖・深海", desc: "1977年に日本の遠洋漁船が引き上げた、首長竜に似た謎の深海巨大生物。" },
+      { id: "hibagon", no: "No.44", name: "ヒバゴン", origin: "日本・広島県比婆山", desc: "三角形の顔と大きな目をもち、二本足で歩く日本版ビッグフット。" },
+      { id: "issie", no: "No.45", name: "イッシー", origin: "日本・鹿児島県池田湖", desc: "九州最大のカルデラ湖・池田湖にすむといわれる、黒いコブをもつ巨大水棲獣。" },
+      { id: "kussie", no: "No.46", name: "クッシー", origin: "日本・北海道屈斜路湖", desc: "北海道の大きな湖で水面をすべるように泳ぐ姿が目撃された謎の怪獣。" },
+      { id: "tengu", no: "No.47", name: "天狗（テング）", origin: "日本・深い霊山", desc: "真っ赤な顔に高い鼻、背中に翼をもち、葉団扇で風を起こす山の神通力者。" },
+      { id: "kyubi", no: "No.48", name: "九尾の狐", origin: "日本・那須野の殺生石", desc: "9本の黄金の尻尾をもち、妖術をあやつる伝説の大妖怪。" },
+      { id: "orochi", no: "No.49", name: "ヤマタノオロチ", origin: "日本・出雲の斐伊川", desc: "8つの頭と8本の尾をもち、背中に木々が生えるほど巨大な日本神話の大蛇。" },
+      { id: "oni", no: "No.50", name: "鬼（オニ）", origin: "日本・大江山", desc: "鋭い角と牙、トラの皮のふんどしと金棒をもつ、怪力無双の妖怪。" },
+      { id: "yukionna", no: "No.51", name: "雪女（ユキオンナ）", origin: "日本・雪国の峠", desc: "白い着物をまとい、吹雪の夜に音もなくあらわれる美しい雪の精霊。" },
+      { id: "nurarihyon", no: "No.52", name: "ぬらりひょん", origin: "日本・古い屋敷", desc: "大きな頭をもち、夕暮れ時にどこからともなく家に入りこむ妖怪の総大将。" },
+      { id: "rokurokubi", no: "No.53", name: "ろくろ首", origin: "日本・夜の街道宿", desc: "夜になると首がびよーんと長く伸びる、日本の昔話でおなじみの妖怪。" },
+      { id: "ittanmomen", no: "No.54", name: "一反木綿", origin: "日本・鹿児島県の夜空", desc: "長さ約10メートルの白い布の姿で、ヒラヒラと夜空を飛びまわる妖怪。" },
+      { id: "gashadokuro", no: "No.55", name: "がしゃどくろ", origin: "日本・真夜中の荒野", desc: "ガチガチと歯を鳴らしながら夜の闇を歩く、ビルのように巨大なガイコツ妖怪。" },
+      { id: "kuchisake", no: "No.56", name: "口裂け女", origin: "日本・夕暮れの街角", desc: "大きなマスクと赤いコートをまとい、「ワタシ、キレイ？」と尋ねる都市伝説。" },
+      { id: "hasshaku", no: "No.57", name: "八尺様", origin: "日本・山あいの集落", desc: "白いワンピースと麦わら帽子をかぶった、身長2メートル40センチの謎の怪異。" },
+      { id: "slenderman", no: "No.58", name: "スレンダーマン", origin: "アメリカ・霧の森林", desc: "黒いスーツ姿で手足が異常に長く、背中から触手を伸ばす現代の都市伝説。" },
+      { id: "jackalope", no: "No.59", name: "ジャッカロープ", origin: "アメリカ・ワイオミング州", desc: "ウサギの体にシカの立派な角が生えた、素早く走る北米の伝説動物。" },
+      { id: "siren", no: "No.60", name: "セイレーン", origin: "地中海・岩礁の島", desc: "美しい歌声で船乗りたちを魅了する、鳥の翼と魚の尾をもつ海の精霊。" }
+    ];
+
+    // 都市伝説バケモノ専用イラストSVG生成（全60種類）
+    function getMonsterSVG(id) {
+      const idx = MONSTER_CARDS.findIndex((c) => c.id === id);
+      const hue1 = (idx * 37) % 360;
+      const hue2 = (hue1 + 55) % 360;
+      const bg1 = `hsl(${hue1}, 55%, 16%)`;
+      const bg2 = `hsl(${hue2}, 65%, 28%)`;
+      const accent = `hsl(${(hue1 + 140) % 360}, 85%, 65%)`;
+
+      switch (id) {
+        case "cthulhu":
+          return `<svg viewBox="0 0 220 140" xmlns="http://www.w3.org/2000/svg">
+            <defs><radialGradient id="g_cth" cx="50%" cy="35%" r="65%"><stop offset="0%" stop-color="#065f46"/><stop offset="100%" stop-color="#022c22"/></radialGradient></defs>
+            <rect width="220" height="140" fill="url(#g_cth)"/>
+            <path d="M72 78 Q22 30 34 94 Q56 84 72 98 Z" fill="#115e59" stroke="#5eead4" stroke-width="2"/>
+            <path d="M148 78 Q198 30 186 94 Q164 84 148 98 Z" fill="#115e59" stroke="#5eead4" stroke-width="2"/>
+            <ellipse cx="110" cy="54" rx="28" ry="26" fill="#0d9488" stroke="#99f6e4" stroke-width="2"/>
+            <ellipse cx="98" cy="48" rx="6" ry="3.5" fill="#fef08a"/><ellipse cx="122" cy="48" rx="6" ry="3.5" fill="#fef08a"/>
+            <path d="M90 70 Q80 100 72 118 M102 74 Q98 104 94 124 M118 74 Q122 104 126 124 M130 70 Q140 100 148 118" stroke="#14b8a6" stroke-width="5" fill="none" stroke-linecap="round"/>
+          </svg>`;
+        case "bigfoot":
+          return `<svg viewBox="0 0 220 140" xmlns="http://www.w3.org/2000/svg">
+            <rect width="220" height="140" fill="#14532d"/>
+            <polygon points="18,140 42,20 66,140" fill="#052e16"/><polygon points="158,140 184,18 210,140" fill="#052e16"/>
+            <path d="M84 134 L88 94 L82 60 Q95 44 110 46 Q126 44 138 62 L144 96 L128 134 Z" fill="#451a03" stroke="#92400e" stroke-width="2"/>
+            <circle cx="110" cy="36" r="15" fill="#451a03" stroke="#92400e" stroke-width="2"/>
+            <circle cx="104" cy="34" r="2.5" fill="#fef08a"/><circle cx="115" cy="34" r="2.5" fill="#fef08a"/>
+          </svg>`;
+        case "nessie":
+          return `<svg viewBox="0 0 220 140" xmlns="http://www.w3.org/2000/svg">
+            <rect width="220" height="140" fill="#0c4a6e"/>
+            <circle cx="176" cy="28" r="14" fill="#fef9c3" opacity="0.85"/>
+            <path d="M48 104 Q72 68 96 104 Q118 74 140 104" fill="#0284c7" stroke="#7dd3fc" stroke-width="2"/>
+            <path d="M138 106 C144 74, 150 40, 168 34 C178 32, 182 42, 170 46 C158 50, 154 78, 150 106 Z" fill="#0369a1" stroke="#7dd3fc" stroke-width="2"/>
+            <rect x="0" y="102" width="220" height="38" fill="#075985"/>
+          </svg>`;
+        case "mothman":
+          return `<svg viewBox="0 0 220 140" xmlns="http://www.w3.org/2000/svg">
+            <rect width="220" height="140" fill="#090d16"/>
+            <path d="M104 54 C62 14, 16 26, 22 72 C46 66, 76 74, 102 88 Z" fill="#1e293b" stroke="#64748b" stroke-width="2"/>
+            <path d="M116 54 C158 14, 204 26, 198 72 C174 66, 144 74, 118 88 Z" fill="#1e293b" stroke="#64748b" stroke-width="2"/>
+            <ellipse cx="110" cy="76" rx="14" ry="30" fill="#0f172a" stroke="#475569" stroke-width="2"/>
+            <circle cx="103" cy="54" r="5.5" fill="#ef4444"/><circle cx="117" cy="54" r="5.5" fill="#ef4444"/>
+          </svg>`;
+        case "chupacabra":
+          return `<svg viewBox="0 0 220 140" xmlns="http://www.w3.org/2000/svg">
+            <rect width="220" height="140" fill="#2e1065"/>
+            <polygon points="84,54 78,34 94,48" fill="#facc15"/><polygon points="104,48 104,26 116,46" fill="#facc15"/><polygon points="124,52 132,30 136,52" fill="#facc15"/>
+            <ellipse cx="112" cy="76" rx="34" ry="22" fill="#4c1d95" stroke="#a78bfa" stroke-width="2"/>
+            <circle cx="78" cy="64" r="18" fill="#5b21b6" stroke="#a78bfa" stroke-width="2"/>
+            <ellipse cx="70" cy="62" rx="5" ry="3.5" fill="#ef4444"/>
+          </svg>`;
+        case "kappa":
+          return `<svg viewBox="0 0 220 140" xmlns="http://www.w3.org/2000/svg">
+            <rect width="220" height="140" fill="#064e3b"/>
+            <ellipse cx="110" cy="96" rx="28" ry="26" fill="#15803d" stroke="#86efac" stroke-width="2"/>
+            <circle cx="110" cy="54" r="24" fill="#22c55e" stroke="#86efac" stroke-width="2"/>
+            <ellipse cx="110" cy="32" rx="16" ry="5" fill="#bae6fd" stroke="#0284c7" stroke-width="2"/>
+            <polygon points="102,58 118,58 110,68" fill="#facc15"/>
+            <circle cx="101" cy="50" r="3.5" fill="#0f172a"/><circle cx="119" cy="50" r="3.5" fill="#0f172a"/>
+          </svg>`;
+        case "tengu":
+          return `<svg viewBox="0 0 220 140" xmlns="http://www.w3.org/2000/svg">
+            <rect width="220" height="140" fill="#450a0a"/>
+            <path d="M74 68 Q26 30 34 92 Z" fill="#1e293b" stroke="#94a3b8" stroke-width="2"/>
+            <path d="M146 68 Q194 30 186 92 Z" fill="#1e293b" stroke="#94a3b8" stroke-width="2"/>
+            <circle cx="110" cy="62" r="26" fill="#dc2626" stroke="#fca5a5" stroke-width="2"/>
+            <rect x="103" y="26" width="14" height="10" fill="#0f172a"/>
+            <path d="M110 60 L154 62 Q158 68 152 72 L110 70 Z" fill="#ef4444" stroke="#fca5a5" stroke-width="1.5"/>
+            <circle cx="100" cy="54" r="3.5" fill="#fef08a"/><circle cx="120" cy="54" r="3.5" fill="#fef08a"/>
+          </svg>`;
+        case "kyubi":
+          return `<svg viewBox="0 0 220 140" xmlns="http://www.w3.org/2000/svg">
+            <rect width="220" height="140" fill="#31102f"/>
+            <path d="M110 92 Q45 22 36 74 M110 92 Q66 14 58 68 M110 92 Q88 10 84 64 M110 92 Q110 8 110 62 M110 92 Q132 10 136 64 M110 92 Q154 14 162 68 M110 92 Q175 22 184 74" stroke="#facc15" stroke-width="5" fill="none" stroke-linecap="round"/>
+            <polygon points="88,78 96,46 108,68" fill="#fef08a"/><polygon points="132,78 124,46 112,68" fill="#fef08a"/>
+            <circle cx="110" cy="84" r="22" fill="#fde047" stroke="#ca8a04" stroke-width="2"/>
+            <circle cx="102" cy="82" r="3" fill="#dc2626"/><circle cx="118" cy="82" r="3" fill="#dc2626"/>
+          </svg>`;
+        case "orochi":
+          return `<svg viewBox="0 0 220 140" xmlns="http://www.w3.org/2000/svg">
+            <rect width="220" height="140" fill="#1e1b4b"/>
+            <path d="M110 120 Q44 76 34 42 M110 120 Q66 64 56 30 M110 120 Q88 56 84 24 M110 120 Q110 52 110 20 M110 120 Q132 56 136 24 M110 120 Q154 64 164 30 M110 120 Q176 76 186 42" stroke="#10b981" stroke-width="6" fill="none" stroke-linecap="round"/>
+            <circle cx="34" cy="42" r="6" fill="#ef4444"/><circle cx="56" cy="30" r="6" fill="#ef4444"/><circle cx="84" cy="24" r="6" fill="#ef4444"/><circle cx="110" cy="20" r="7" fill="#facc15"/><circle cx="136" cy="24" r="6" fill="#ef4444"/><circle cx="164" cy="30" r="6" fill="#ef4444"/><circle cx="186" cy="42" r="6" fill="#ef4444"/>
+          </svg>`;
+        default: {
+          const card = MONSTER_CARDS[idx] || { no: "No.00", name: "UMA" };
+          let motif = "";
+          if (idx % 5 === 0) {
+            // 翼と角の竜・魔獣シルエット
+            motif = `
+              <path d="M110 68 Q45 20 35 84 Q70 76 105 90 Z" fill="${accent}" opacity="0.8"/>
+              <path d="M110 68 Q175 20 185 84 Q150 76 115 90 Z" fill="${accent}" opacity="0.8"/>
+              <polygon points="92,46 84,22 102,40" fill="#fef08a"/>
+              <polygon points="128,46 136,22 118,40" fill="#fef08a"/>
+              <circle cx="110" cy="64" r="24" fill="#1e293b" stroke="#facc15" stroke-width="2.5"/>
+              <circle cx="101" cy="60" r="4" fill="#ef4444"/><circle cx="119" cy="60" r="4" fill="#ef4444"/>
+            `;
+          } else if (idx % 5 === 1) {
+            // 水棲UMA・海竜シルエット
+            motif = `
+              <path d="M35 96 Q72 60 110 96 Q148 60 185 96" stroke="${accent}" stroke-width="8" fill="none" stroke-linecap="round"/>
+              <circle cx="148" cy="54" r="16" fill="${accent}" stroke="#ffffff" stroke-width="2"/>
+              <circle cx="153" cy="50" r="3.5" fill="#fef08a"/>
+              <rect x="0" y="96" width="220" height="44" fill="#0c4a6e" opacity="0.85"/>
+            `;
+          } else if (idx % 5 === 2) {
+            // 神秘の霊獣・神話モンスター
+            motif = `
+              <polygon points="110,16 116,44 104,44" fill="#fef08a"/>
+              <circle cx="110" cy="68" r="28" fill="${accent}" stroke="#ffffff" stroke-width="2.5"/>
+              <circle cx="100" cy="64" r="4" fill="#0f172a"/><circle cx="120" cy="64" r="4" fill="#0f172a"/>
+              <path d="M96 80 Q110 90 124 80" stroke="#0f172a" stroke-width="3" fill="none"/>
+            `;
+          } else if (idx % 5 === 3) {
+            // 妖怪・精霊シルエット
+            motif = `
+              <circle cx="110" cy="58" r="26" fill="#f8fafc" stroke="${accent}" stroke-width="3"/>
+              <path d="M84 68 Q76 112 96 122 Q110 112 124 122 Q144 112 136 68" fill="#e2e8f0"/>
+              <circle cx="101" cy="54" r="4" fill="#dc2626"/><circle cx="119" cy="54" r="4" fill="#dc2626"/>
+              <circle cx="48" cy="42" r="5" fill="#38bdf8" opacity="0.8"/><circle cx="174" cy="48" r="6" fill="#38bdf8" opacity="0.8"/>
+            `;
+          } else {
+            // 都市伝説・未確認生物シルエット
+            motif = `
+              <ellipse cx="110" cy="70" rx="22" ry="34" fill="#0f172a" stroke="${accent}" stroke-width="3"/>
+              <circle cx="110" cy="38" r="16" fill="#0f172a" stroke="${accent}" stroke-width="2.5"/>
+              <circle cx="104" cy="36" r="3.5" fill="#facc15"/><circle cx="116" cy="36" r="3.5" fill="#facc15"/>
+              <path d="M88 64 L54 88 M132 64 L166 88" stroke="${accent}" stroke-width="4" stroke-linecap="round"/>
+            `;
+          }
+          return `<svg viewBox="0 0 220 140" xmlns="http://www.w3.org/2000/svg">
+            <defs><linearGradient id="g_${idx}" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="${bg1}"/><stop offset="100%" stop-color="${bg2}"/></linearGradient></defs>
+            <rect width="220" height="140" fill="url(#g_${idx})"/>
+            ${motif}
+            <text x="110" y="130" font-size="11" font-weight="bold" fill="#fef08a" text-anchor="middle">${card.no} ${card.name}</text>
+          </svg>`;
+        }
+      }
+    }
+
+    // ==========================================
+    // 4. 音声読み上げ機能（ON/OFF・途中キャンセル・記号と本文のポーズ調整）
+    // ==========================================
+    const OPTION_LABELS = ["ア", "イ", "ウ", "エ"];
+    let speechSequenceId = 0;
+    let voiceEnabled = true;
+
+    function updateVoiceToggleButtons() {
+      const buttons = [
+        document.getElementById("btn-toggle-voice-start"),
+        document.getElementById("btn-toggle-voice-quiz")
+      ];
+      buttons.forEach((btn) => {
+        if (!btn) return;
+        if (voiceEnabled) {
+          btn.textContent = "🔊 読み上げON";
+          btn.classList.remove("voice-off");
+        } else {
+          btn.textContent = "🔇 読み上げOFF";
+          btn.classList.add("voice-off");
+        }
+      });
+
+      const replayBtn = document.getElementById("btn-replay-voice");
+      if (replayBtn) {
+        replayBtn.disabled = !voiceEnabled;
+      }
+    }
+
+    function clearSpeakingHighlight() {
+      document.querySelectorAll(".option-btn").forEach((btn) => {
+        btn.classList.remove("speaking-now");
+      });
+    }
+
+    function stopSpeech() {
+      speechSequenceId++;
+      clearSpeakingHighlight();
+      if ("speechSynthesis" in window) {
+        try {
+          window.speechSynthesis.cancel();
+        } catch (e) {
+          // キャンセル時エラーを無視
+        }
+      }
+    }
+
+    function toggleVoiceEnabled() {
+      voiceEnabled = !voiceEnabled;
+      updateVoiceToggleButtons();
+      if (!voiceEnabled) {
+        stopSpeech();
+      } else if (!document.getElementById("quiz-screen").classList.contains("hidden") && currentQuestion) {
+        speakQuestionAndOptions(currentQuestion, currentOptions);
+      }
+      saveProgressToStorage();
+    }
+
+    function speakSimpleText(text, onDone = null) {
+      if (!voiceEnabled || !("speechSynthesis" in window)) {
+        if (onDone) onDone();
+        return;
+      }
+      stopSpeech();
+      const mySeq = speechSequenceId;
+      try {
+        const utter = new SpeechSynthesisUtterance(text);
+        utter.lang = "ja-JP";
+        utter.rate = 0.96;
+        utter.pitch = 1.05;
+        utter.onend = () => {
+          if (mySeq === speechSequenceId && onDone) onDone();
+        };
+        utter.onerror = () => {
+          if (mySeq === speechSequenceId && onDone) onDone();
+        };
+        window.speechSynthesis.speak(utter);
+      } catch (e) {
+        if (onDone) onDone();
+      }
+    }
+
+    // 慣用句に続いて4つの選択肢を順番に読み上げ（「ア・イ・ウ・エ」と本文の間に間を設ける）
+    function speakQuestionAndOptions(item, options) {
+      if (!voiceEnabled || !("speechSynthesis" in window) || !item) return;
+
+      stopSpeech();
+      const mySeq = speechSequenceId;
+
+      const steps = [{ text: item.reading || item.text, optionIndex: -1, pauseAfter: 280 }];
+      options.forEach((opt, idx) => {
+        steps.push({ text: OPTION_LABELS[idx], optionIndex: idx, pauseAfter: 240 });
+        steps.push({ text: opt.text, optionIndex: idx, pauseAfter: 180 });
+      });
+
+      let stepPos = 0;
+
+      function speakNextStep() {
+        if (mySeq !== speechSequenceId || !voiceEnabled) {
+          clearSpeakingHighlight();
+          return;
+        }
+        if (stepPos >= steps.length) {
+          clearSpeakingHighlight();
+          return;
+        }
+
+        const step = steps[stepPos];
+        clearSpeakingHighlight();
+        if (step.optionIndex >= 0) {
+          const optionButtons = document.querySelectorAll("#options-container .option-btn");
+          if (optionButtons[step.optionIndex]) {
+            optionButtons[step.optionIndex].classList.add("speaking-now");
+          }
+        }
+
+        try {
+          const utter = new SpeechSynthesisUtterance(step.text);
+          utter.lang = "ja-JP";
+          utter.rate = 0.96;
+          utter.pitch = 1.05;
+
+          utter.onend = () => {
+            if (mySeq !== speechSequenceId || !voiceEnabled) {
+              clearSpeakingHighlight();
+              return;
+            }
+            stepPos++;
+            if (stepPos < steps.length) {
+              setTimeout(speakNextStep, step.pauseAfter);
+            } else {
+              clearSpeakingHighlight();
+            }
+          };
+
+          utter.onerror = () => {
+            clearSpeakingHighlight();
+          };
+
+          window.speechSynthesis.speak(utter);
+        } catch (e) {
+          clearSpeakingHighlight();
+        }
+      }
+
+      setTimeout(speakNextStep, 80);
+    }
+
+    // ==========================================
+    // 5. クイズ状態管理（誤答時の2問後・4問後再出題 & カード図鑑 & 自動保存）
+    // ==========================================
+    let quizQueue = [];
+    let currentQuestion = null;
+    let currentOptions = [];
+    let masteredIds = new Set();
+    let unlockedCards = [];
+    let failedOnCurrentAttempt = false;
+    let questionLocked = false;
+    let autoAdvanceTimer = null;
+    let cardPopupTimer = null;
+
+    // 誤答した問題の「2回連続1発正解」トラッキング:
+    // { [idiomId]: { streak: 0 | 1 } }
+    let retryProgress = {};
+
+    function clearAutoAdvanceTimer() {
+      if (autoAdvanceTimer) {
+        clearTimeout(autoAdvanceTimer);
+        autoAdvanceTimer = null;
+      }
+    }
+
+    function clearCardPopupTimer() {
+      if (cardPopupTimer !== null) {
+        cancelAnimationFrame(cardPopupTimer);
+        cardPopupTimer = null;
+      }
+    }
+
+    function shuffleArray(arr) {
+      const copy = [...arr];
+      for (let i = copy.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [copy[i], copy[j]] = [copy[j], copy[i]];
+      }
+      return copy;
+    }
+
+    function shuffleOptionsDifferentOrder(options) {
+      if (options.length <= 1) return [...options];
+      const prevTexts = options.map((o) => o.text).join("|");
+      let shuffled = shuffleArray(options);
+      let attempts = 0;
+      while (shuffled.map((o) => o.text).join("|") === prevTexts && attempts < 10) {
+        shuffled = shuffleArray(options);
+        attempts++;
+      }
+      return shuffled;
+    }
+
+    // ==========================================
+    // 6. データ自動保存・ロード・初期化（localStorage + Firestore）
+    // ==========================================
+    const STORAGE_KEY = "kanyoku_quiz_grade4_v1";
+    let db = null;
+    let currentUser = null;
+    let appId = "kanyoku-quiz-app";
+
+    function buildSavePayload() {
+      const queueIds = [];
+      if (currentQuestion && !masteredIds.has(currentQuestion.id)) {
+        queueIds.push(currentQuestion.id);
+      }
+      quizQueue.forEach((item) => {
+        if (item && item.id) {
+          queueIds.push(item.id);
+        }
+      });
+
+      return {
+        masteredIds: Array.from(masteredIds),
+        unlockedCards: [...unlockedCards],
+        queueIds,
+        retryProgress: { ...retryProgress },
+        voiceEnabled,
+        updatedAt: Date.now()
+      };
+    }
+
+    async function saveProgressToStorage() {
+      const payload = buildSavePayload();
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+      } catch (e) {
+        // localStorage使用不可時は無視
+      }
+
+      if (db && currentUser) {
+        try {
+          const docRef = doc(db, "artifacts", appId, "users", currentUser.uid, "quizProgress", "state");
+          await setDoc(docRef, payload);
+        } catch (e) {
+          // Firestore保存エラー時は無視
+        }
+      }
+    }
+
+    function applyLoadedData(data) {
+      if (!data || typeof data !== "object") return false;
+      const idiomMap = new Map(IDIOMS_DATA.map((item) => [item.id, item]));
+
+      if (Array.isArray(data.masteredIds)) {
+        masteredIds = new Set(data.masteredIds.filter((id) => idiomMap.has(id)));
+      }
+      if (Array.isArray(data.unlockedCards)) {
+        const validCardIds = new Set(MONSTER_CARDS.map((c) => c.id));
+        unlockedCards = data.unlockedCards.filter((id) => validCardIds.has(id));
+      }
+      if (Array.isArray(data.queueIds)) {
+        quizQueue = data.queueIds
+          .map((id) => idiomMap.get(id))
+          .filter((item) => item && !masteredIds.has(item.id));
+      }
+      if (data.retryProgress && typeof data.retryProgress === "object") {
+        retryProgress = {};
+        Object.keys(data.retryProgress).forEach((id) => {
+          if (idiomMap.has(id) && !masteredIds.has(id)) {
+            retryProgress[id] = { streak: Number(data.retryProgress[id]?.streak) || 0 };
+          }
+        });
+      }
+      if (typeof data.voiceEnabled === "boolean") {
+        voiceEnabled = data.voiceEnabled;
+      }
+
+      // 未クリアの問題が残っているのにキューが空の場合は補完
+      if (masteredIds.size < IDIOMS_DATA.length && quizQueue.length === 0) {
+        const remaining = IDIOMS_DATA.filter((item) => !masteredIds.has(item.id));
+        quizQueue = shuffleArray(remaining);
+      }
+
+      updateVoiceToggleButtons();
+      updateZukanButtons();
+      updateStartButtonLabel();
+      return masteredIds.size > 0 || unlockedCards.length > 0;
+    }
+
+    function updateStartButtonLabel() {
+      const btnStart = document.getElementById("btn-start");
+      if (!btnStart) return;
+      if (masteredIds.size >= IDIOMS_DATA.length) {
+        btnStart.textContent = "全60問クリア！結果を見る";
+      } else if (masteredIds.size > 0 || unlockedCards.length > 0) {
+        btnStart.textContent = `つづきから再開！（${masteredIds.size}/60問クリア）`;
+      } else {
+        btnStart.textContent = "クイズをはじめる！";
+      }
+    }
+
+    async function initStorageAndLoad() {
+      let loadedFromLocal = false;
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          loadedFromLocal = applyLoadedData(parsed);
+        }
+      } catch (e) {
+        // 読み込み失敗時は無視
+      }
+
+      try {
+        if (typeof __firebase_config !== "undefined" && __firebase_config) {
+          const firebaseConfig = JSON.parse(__firebase_config);
+          if (typeof __app_id !== "undefined" && __app_id) {
+            appId = __app_id;
+          }
+          const app = initializeApp(firebaseConfig);
+          const auth = getAuth(app);
+          db = getFirestore(app);
+
+          if (typeof __initial_auth_token !== "undefined" && __initial_auth_token) {
+            const cred = await signInWithCustomToken(auth, __initial_auth_token);
+            currentUser = cred.user;
+          } else {
+            const cred = await signInAnonymously(auth);
+            currentUser = cred.user;
+          }
+
+          if (currentUser && !loadedFromLocal) {
+            const docRef = doc(db, "artifacts", appId, "users", currentUser.uid, "quizProgress", "state");
+            const snap = await getDoc(docRef);
+            if (snap.exists()) {
+              applyLoadedData(snap.data());
+            }
+          }
+        }
+      } catch (e) {
+        // Firebase未設定環境ではlocalStorageのみで動作
+      }
+    }
+
+    // ==========================================
+    // 7. カード図鑑・ポップアップ制御
+    // ==========================================
+    function updateZukanButtons() {
+      const count = unlockedCards.length;
+      const total = MONSTER_CARDS.length;
+      const startBtn = document.getElementById("btn-open-zukan-start");
+      const quizBtn = document.getElementById("btn-open-zukan-quiz");
+      const titleEl = document.getElementById("zukan-title");
+
+      if (startBtn) startBtn.textContent = `📖 カード図鑑 (${count}/${total})`;
+      if (quizBtn) quizBtn.textContent = `📖 図鑑 (${count}/${total})`;
+      if (titleEl) titleEl.textContent = `📖 世界の都市伝説バケモノ図鑑（${count} / ${total}枚）`;
+    }
+
+    function openZukanModal() {
+      const modal = document.getElementById("zukan-modal");
+      const grid = document.getElementById("zukan-grid");
+      const fxCanvas = document.getElementById("fx-canvas");
+      if (fxCanvas) {
+        fxCanvas.style.zIndex = "48";
+      }
+
+      const unlockedSet = new Set(unlockedCards);
+      grid.innerHTML = "";
+
+      MONSTER_CARDS.forEach((card) => {
+        const isUnlocked = unlockedSet.has(card.id);
+        const itemEl = document.createElement("div");
+        itemEl.className = `zukan-card-item ${isUnlocked ? "" : "locked"}`;
+
+        if (isUnlocked) {
+          itemEl.innerHTML = `
+            <div class="zukan-card-no">${card.no}</div>
+            <div class="zukan-card-thumb">${getMonsterSVG(card.id)}</div>
+            <div class="zukan-card-label">${card.name}</div>
+          `;
+          itemEl.addEventListener("click", () => openZukanZoom(card, true));
+        } else {
+          itemEl.innerHTML = `
+            <div class="zukan-card-no">${card.no}</div>
+            <div class="zukan-card-thumb">
+              <svg viewBox="0 0 220 140" xmlns="http://www.w3.org/2000/svg">
+                <rect width="220" height="140" fill="#0f172a"/>
+                <text x="110" y="84" font-size="48" font-weight="bold" fill="#334155" text-anchor="middle">？</text>
+              </svg>
+            </div>
+            <div class="zukan-card-label" style="color:#64748b;">？？？</div>
+          `;
+          itemEl.addEventListener("click", () => openZukanZoom(card, false));
+        }
+
+        grid.appendChild(itemEl);
+      });
+
+      updateZukanButtons();
+      modal.classList.remove("hidden");
+    }
+
+    function closeZukanModal() {
+      document.getElementById("zukan-modal").classList.add("hidden");
+      const fxCanvas = document.getElementById("fx-canvas");
+      if (fxCanvas) {
+        fxCanvas.style.zIndex = "60";
+      }
+    }
+
+    function openZukanZoom(card, isUnlocked) {
+      const overlay = document.getElementById("zukan-zoom-overlay");
+      const content = document.getElementById("zukan-zoom-content");
+
+      if (isUnlocked) {
+        content.innerHTML = `
+          <div style="font-size: 1.05rem; font-weight: 900; color: #facc15; letter-spacing: 0.05em;">${card.no}</div>
+          <div style="font-size: 1.45rem; font-weight: 900; color: #fef08a; margin-top: 2px;">${card.name}</div>
+          <div style="font-size: 0.92rem; font-weight: 800; color: #c4b5fd; margin-top: 4px;">出現場所：${card.origin}</div>
+          <div style="background: #0f172a; border: 2px solid #a78bfa; border-radius: 14px; padding: 6px; margin-top: 10px;">
+            ${getMonsterSVG(card.id)}
+          </div>
+          <p style="font-size: 1.02rem; font-weight: 700; line-height: 1.55; color: #f8fafc; margin-top: 10px; text-align: left;">${card.desc}</p>
+        `;
+      } else {
+        content.innerHTML = `
+          <div style="font-size: 1.05rem; font-weight: 900; color: #94a3b8;">${card.no}</div>
+          <div style="font-size: 1.35rem; font-weight: 900; color: #cbd5e1; margin-top: 4px;">未発見のモンスター</div>
+          <div style="background: #0f172a; border: 2px dashed #475569; border-radius: 14px; padding: 12px; margin-top: 12px;">
+            <svg viewBox="0 0 220 140" xmlns="http://www.w3.org/2000/svg">
+              <rect width="220" height="140" fill="#0f172a"/>
+              <text x="110" y="88" font-size="60" font-weight="bold" fill="#475569" text-anchor="middle">？</text>
+            </svg>
+          </div>
+          <p style="font-size: 1rem; font-weight: 700; line-height: 1.5; color: #cbd5e1; margin-top: 12px;">
+            クイズに正解すると新しいカードが解放されるよ！
+          </p>
+        `;
+      }
+
+      overlay.classList.remove("hidden");
+    }
+
+    function closeZukanZoom() {
+      document.getElementById("zukan-zoom-overlay").classList.add("hidden");
+    }
+
+    // カード獲得ポップアップ表示（正確に1秒間表示した後に次へ進む）
+    function showCardGetPopup(card, onComplete) {
+      clearCardPopupTimer();
+      const overlay = document.getElementById("card-get-overlay");
+      document.getElementById("card-get-banner").textContent = `✨ ${card.no} カードゲット！（${unlockedCards.length}/${MONSTER_CARDS.length}枚目）✨`;
+      document.getElementById("card-get-art").innerHTML = getMonsterSVG(card.id);
+      document.getElementById("card-get-name").textContent = card.name;
+      document.getElementById("card-get-origin").textContent = `出現場所：${card.origin}`;
+      document.getElementById("card-get-desc").textContent = card.desc;
+
+      overlay.classList.remove("hidden");
+      let finished = false;
+      let startTime = null;
+
+      const finishPopup = () => {
+        if (finished) return;
+        finished = true;
+        clearCardPopupTimer();
+        overlay.classList.add("hidden");
+        if (onComplete) onComplete();
+      };
+
+      const tick = (now) => {
+        if (finished) return;
+        if (startTime === null) {
+          startTime = now;
+        }
+        if (now - startTime >= 1000) {
+          finishPopup();
+        } else {
+          cardPopupTimer = requestAnimationFrame(tick);
+        }
+      };
+
+      cardPopupTimer = requestAnimationFrame(tick);
+    }
+
+    // ==========================================
+    // 8. クイズ進行・正誤判定（誤答時の2問後・4問後再出題ロジック）
+    // ==========================================
+    function updateHeaderProgress() {
+      const total = IDIOMS_DATA.length;
+      const cleared = masteredIds.size;
+      const pct = Math.round((cleared / total) * 100);
+
+      document.getElementById("mastered-counter").textContent = `クリア：${cleared} / ${total}問`;
+      document.getElementById("progress-fill").style.width = `${pct}%`;
+
+      const remainingCount = quizQueue.length + (currentQuestion ? 1 : 0);
+      document.getElementById("queue-counter").textContent = `のこり${remainingCount}問`;
+      updateZukanButtons();
+    }
+
+    function setStatusMessage(text, type = "neutral") {
+      const strip = document.getElementById("status-strip");
+      strip.textContent = text;
+      strip.classList.remove("feedback-wrong", "feedback-correct");
+      if (type === "wrong") strip.classList.add("feedback-wrong");
+      if (type === "correct") strip.classList.add("feedback-correct");
+    }
+
+    function initQuiz(forceFresh = false) {
+      stopSpeech();
+      clearAutoAdvanceTimer();
+      clearCardPopupTimer();
+      stopCelebrationEffects();
+
+      document.getElementById("start-screen").classList.add("hidden");
+      document.getElementById("clear-screen").style.display = "none";
+      document.getElementById("quiz-screen").classList.remove("hidden");
+
+      if (forceFresh) {
+        masteredIds = new Set();
+        unlockedCards = [];
+        retryProgress = {};
+        quizQueue = shuffleArray(IDIOMS_DATA);
+        currentQuestion = null;
+        saveProgressToStorage();
+      } else {
+        if (masteredIds.size >= IDIOMS_DATA.length) {
+          showClearScreen();
+          return;
+        }
+        if (quizQueue.length === 0) {
+          const remaining = IDIOMS_DATA.filter((item) => !masteredIds.has(item.id));
+          quizQueue = shuffleArray(remaining);
+        }
+      }
+
+      loadNextQuestion();
+    }
+
+    function loadNextQuestion() {
+      clearAutoAdvanceTimer();
+      clearCardPopupTimer();
+
+      if (quizQueue.length === 0) {
+        if (masteredIds.size >= IDIOMS_DATA.length) {
+          showClearScreen();
+          return;
+        }
+        const remaining = IDIOMS_DATA.filter((item) => !masteredIds.has(item.id));
+        quizQueue = shuffleArray(remaining);
+      }
+
+      currentQuestion = quizQueue.shift();
+      failedOnCurrentAttempt = false;
+      questionLocked = false;
+
+      const isRetry = Boolean(retryProgress[currentQuestion.id]);
+      const retryBadge = document.getElementById("retry-badge");
+      if (isRetry) {
+        const streak = retryProgress[currentQuestion.id].streak || 0;
+        retryBadge.textContent = `ふくしゅう！(${streak}/2)`;
+        retryBadge.classList.remove("hidden");
+      } else {
+        retryBadge.classList.add("hidden");
+      }
+
+      document.getElementById("idiom-display").innerHTML = currentQuestion.html;
+      document.getElementById("illustration-slot").innerHTML = getIllustrationSVG(currentQuestion.id);
+
+      const rawOptions = [
+        { text: currentQuestion.correct, isCorrect: true },
+        ...currentQuestion.distractors.map((d) => ({ text: d, isCorrect: false }))
+      ];
+      currentOptions = shuffleArray(rawOptions);
+
+      renderOptions(false);
+      updateHeaderProgress();
+
+      if (isRetry) {
+        setStatusMessage("ふくしゅう問題！1発で正解するとカードに近づくよ！", "neutral");
+      } else {
+        setStatusMessage("正しい意味を4つの中から選ぼう！", "neutral");
+      }
+
+      saveProgressToStorage();
+      speakQuestionAndOptions(currentQuestion, currentOptions);
+    }
+
+    function renderOptions(withShuffleAnim = false) {
+      const container = document.getElementById("options-container");
+      container.innerHTML = "";
+
+      currentOptions.forEach((opt, idx) => {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = `option-btn ${withShuffleAnim ? "shuffle-anim" : ""}`;
+        btn.innerHTML = `
+          <span class="option-badge opt-color-${idx}">${OPTION_LABELS[idx]}</span>
+          <span>${opt.text}</span>
+        `;
+        btn.addEventListener("click", () => handleAnswer(idx));
+        container.appendChild(btn);
+      });
+    }
+
+    // 誤答した問題を「2問後」と「4問後」に再出題キューへ挿入する
+    function scheduleTwoAndFourLater(item) {
+      // 既存の同一IDの予約を一度整理してから2問後(index 1)・4問後(index 3)へ配置
+      quizQueue = quizQueue.filter((q) => q.id !== item.id);
+
+      const pos2 = Math.min(1, quizQueue.length);
+      quizQueue.splice(pos2, 0, item);
+
+      const pos4 = Math.min(3, quizQueue.length);
+      quizQueue.splice(pos4, 0, item);
+
+      retryProgress[item.id] = { streak: 0 };
+    }
+
+    function handleAnswer(selectedIndex) {
+      if (questionLocked || !currentQuestion) return;
+
+      // 読み上げ中であれば即座にキャンセル
+      stopSpeech();
+      ensureAudioContext();
+
+      const chosen = currentOptions[selectedIndex];
+      if (!chosen) return;
+
+      if (!chosen.isCorrect) {
+        // 不正解時の処理：ブブッ音 + シャッフル + 正解するまで何度でもやり直し
+        failedOnCurrentAttempt = true;
+        playBuzzerSound();
+
+        const container = document.getElementById("options-container");
+        container.classList.remove("shake-anim");
+        void container.offsetWidth;
+        container.classList.add("shake-anim");
+
+        currentOptions = shuffleOptionsDifferentOrder(currentOptions);
+        renderOptions(true);
+
+        setStatusMessage("ブブッ！ちがうよ！選択肢がシャッフルされたので、もう一度えらぼう！", "wrong");
+        return;
+      }
+
+      // 正解を選んだ時の処理
+      questionLocked = true;
+      const buttons = document.querySelectorAll("#options-container .option-btn");
+      buttons.forEach((btn, idx) => {
+        btn.disabled = true;
+        if (idx === selectedIndex) {
+          btn.classList.add("correct-choice");
+        }
+      });
+
+      if (failedOnCurrentAttempt) {
+        // 間違った後に正解した場合：カードはもらえず、「『慣用句』の意味は『意味』です。」と音声が流れ、2問後と4問後に再出題
+        scheduleTwoAndFourLater(currentQuestion);
+        currentQuestion = null;
+        updateHeaderProgress();
+        saveProgressToStorage();
+
+        setStatusMessage(
+          `せいかい！（2問後と4問後に再挑戦するよ！）`,
+          "correct"
+        );
+
+        const meaningSentence = `「${IDIOMS_DATA.find((d) => d.id === quizQueue.find((q) => retryProgress[q.id])?.id)?.text || document.getElementById("idiom-display").textContent}」の意味は、「${chosen.text}」です。`;
+        // 正確な慣用句テキストで読み上げ
+        const justAnsweredItem = Object.keys(retryProgress).length > 0
+          ? IDIOMS_DATA.find((d) => d.correct === chosen.text)
+          : null;
+        const speechText = justAnsweredItem
+          ? `「${justAnsweredItem.reading || justAnsweredItem.text}」の意味は、「${justAnsweredItem.correct}」です。`
+          : meaningSentence;
+
+        if (voiceEnabled && "speechSynthesis" in window) {
+          speakSimpleText(speechText, () => {
+            autoAdvanceTimer = setTimeout(() => {
+              loadNextQuestion();
+            }, 350);
+          });
+        } else {
+          autoAdvanceTimer = setTimeout(() => {
+            loadNextQuestion();
+          }, 1300);
+        }
+        return;
+      }
+
+      // 1発で正解した場合！
+      playPinPonSound();
+
+      const qId = currentQuestion.id;
+      if (retryProgress[qId]) {
+        // 2問後・4問後の再挑戦中
+        const nextStreak = (retryProgress[qId].streak || 0) + 1;
+        if (nextStreak < 2) {
+          // 1回目の再挑戦に1発正解（あと1回、4問後の再挑戦で1発正解すればカード獲得！）
+          retryProgress[qId].streak = nextStreak;
+          currentQuestion = null;
+          updateHeaderProgress();
+          saveProgressToStorage();
+
+          setStatusMessage("ピンポン！1発せいかい！つぎの再挑戦も1発で正解するとカードがもらえるよ！", "correct");
+          autoAdvanceTimer = setTimeout(() => {
+            loadNextQuestion();
+          }, 950);
+          return;
+        } else {
+          // 2回とも1発正解達成！
+          delete retryProgress[qId];
+          quizQueue = quizQueue.filter((q) => q.id !== qId);
+        }
+      }
+
+      // 完全クリア（マスター）＆カード獲得！
+      masteredIds.add(qId);
+      currentQuestion = null;
+
+      let newlyUnlockedCard = null;
+      const unlockedSet = new Set(unlockedCards);
+      const nextCard = MONSTER_CARDS.find((c) => !unlockedSet.has(c.id));
+      if (nextCard) {
+        unlockedCards.push(nextCard.id);
+        newlyUnlockedCard = nextCard;
+      }
+
+      updateHeaderProgress();
+      saveProgressToStorage();
+      setStatusMessage("ピンポン！大せいかい！都市伝説カードをゲットしたよ！", "correct");
+
+      if (newlyUnlockedCard) {
+        showCardGetPopup(newlyUnlockedCard, () => {
+          loadNextQuestion();
+        });
+      } else {
+        autoAdvanceTimer = setTimeout(() => {
+          loadNextQuestion();
+        }, 900);
+      }
+    }
+
+    // ==========================================
+    // 9. 全問クリア画面 & 紙吹雪・花火・七色フラッシュ演出
+    // ==========================================
+    let fxAnimId = null;
+    let fxParticles = [];
+    let fireworkTimer = 0;
+
+    function showClearScreen() {
+      stopSpeech();
+      clearAutoAdvanceTimer();
+      clearCardPopupTimer();
+
+      document.getElementById("start-screen").classList.add("hidden");
+      document.getElementById("quiz-screen").classList.add("hidden");
+
+      const clearScreen = document.getElementById("clear-screen");
+      clearScreen.style.display = "flex";
+
+      const showcase = document.getElementById("clear-cards-showcase");
+      showcase.innerHTML = "";
+
+      MONSTER_CARDS.forEach((card) => {
+        const mini = document.createElement("div");
+        mini.className = "mini-complete-card";
+        mini.innerHTML = `
+          ${getMonsterSVG(card.id)}
+          <span>${card.name}</span>
+        `;
+        mini.addEventListener("click", () => openZukanZoom(card, true));
+        showcase.appendChild(mini);
+      });
+
+      saveProgressToStorage();
+      startCelebrationEffects();
+      playFanfareSound();
+    }
+
+    function startCelebrationEffects() {
+      document.body.classList.add("rainbow-active");
+      const canvas = document.getElementById("fx-canvas");
+      const ctx = canvas.getContext("2d");
+
+      function resizeCanvas() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+      }
+      resizeCanvas();
+
+      fxParticles = [];
+      const colors = ["#ff4d4d", "#ffae00", "#ffee00", "#22c55e", "#38bdf8", "#a855f7", "#ec4899"];
+
+      // 紙吹雪を初期生成
+      for (let i = 0; i < 120; i++) {
+        fxParticles.push({
+          kind: "confetti",
+          x: Math.random() * canvas.width,
+          y: Math.random() * canvas.height - canvas.height,
+          vx: (Math.random() - 0.5) * 2.5,
+          vy: 2 + Math.random() * 3.5,
+          size: 6 + Math.random() * 6,
+          color: colors[Math.floor(Math.random() * colors.length)],
+          angle: Math.random() * Math.PI * 2,
+          spin: (Math.random() - 0.5) * 0.15
+        });
+      }
+
+      function spawnFirework() {
+        const cx = canvas.width * (0.15 + Math.random() * 0.7);
+        const cy = canvas.height * (0.15 + Math.random() * 0.45);
+        const color = colors[Math.floor(Math.random() * colors.length)];
+        for (let i = 0; i < 42; i++) {
+          const ang = (Math.PI * 2 * i) / 42;
+          const speed = 2 + Math.random() * 4.5;
+          fxParticles.push({
+            kind: "spark",
+            x: cx,
+            y: cy,
+            vx: Math.cos(ang) * speed,
+            vy: Math.sin(ang) * speed,
+            alpha: 1,
+            decay: 0.015 + Math.random() * 0.015,
+            color
+          });
+        }
+      }
+
+      spawnFirework();
+      fireworkTimer = 0;
+
+      if (fxAnimId) cancelAnimationFrame(fxAnimId);
+
+      function loop() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        fireworkTimer++;
+        if (fireworkTimer % 38 === 0) {
+          spawnFirework();
+        }
+
+        for (let i = fxParticles.length - 1; i >= 0; i--) {
+          const p = fxParticles[i];
+          if (p.kind === "confetti") {
+            p.x += p.vx;
+            p.y += p.vy;
+            p.angle += p.spin;
+            if (p.y > canvas.height + 20) {
+              p.y = -15;
+              p.x = Math.random() * canvas.width;
+            }
+            ctx.save();
+            ctx.translate(p.x, p.y);
+            ctx.rotate(p.angle);
+            ctx.fillStyle = p.color;
+            ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size * 0.6);
+            ctx.restore();
+          } else {
+            p.x += p.vx;
+            p.y += p.vy;
+            p.vy += 0.06;
+            p.alpha -= p.decay;
+            if (p.alpha <= 0) {
+              fxParticles.splice(i, 1);
+              continue;
+            }
+            ctx.save();
+            ctx.globalAlpha = Math.max(0, p.alpha);
+            ctx.fillStyle = p.color;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, 3.2, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+          }
+        }
+
+        fxAnimId = requestAnimationFrame(loop);
+      }
+
+      loop();
+    }
+
+    function stopCelebrationEffects() {
+      document.body.classList.remove("rainbow-active");
+      if (fxAnimId) {
+        cancelAnimationFrame(fxAnimId);
+        fxAnimId = null;
+      }
+      fxParticles = [];
+      const canvas = document.getElementById("fx-canvas");
+      if (canvas) {
+        const ctx = canvas.getContext("2d");
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+      }
+    }
+
+    // ==========================================
+    // 10. データ初期化処理
+    // ==========================================
+    async function resetAllProgressData() {
+      stopSpeech();
+      clearAutoAdvanceTimer();
+      clearCardPopupTimer();
+      stopCelebrationEffects();
+
+      masteredIds = new Set();
+      unlockedCards = [];
+      quizQueue = [];
+      currentQuestion = null;
+      retryProgress = {};
+
+      try {
+        localStorage.removeItem(STORAGE_KEY);
+      } catch (e) {
+        // 無視
+      }
+
+      if (db && currentUser) {
+        try {
+          const docRef = doc(db, "artifacts", appId, "users", currentUser.uid, "quizProgress", "state");
+          await deleteDoc(docRef);
+        } catch (e) {
+          // 無視
+        }
+      }
+
+      document.getElementById("reset-confirm-modal").classList.add("hidden");
+      document.getElementById("quiz-screen").classList.add("hidden");
+      document.getElementById("clear-screen").style.display = "none";
+      document.getElementById("start-screen").classList.remove("hidden");
+
+      updateZukanButtons();
+      updateStartButtonLabel();
+    }
+
+    // ==========================================
+    // 11. イベントリスナー登録 & 起動初期化
+    // ==========================================
+    document.getElementById("btn-start").addEventListener("click", () => {
+      ensureAudioContext();
+      initQuiz(false);
+    });
+
+    document.getElementById("btn-restart").addEventListener("click", () => {
+      ensureAudioContext();
+      initQuiz(true);
+    });
+
+    document.getElementById("btn-replay-voice").addEventListener("click", () => {
+      ensureAudioContext();
+      if (currentQuestion && voiceEnabled) {
+        speakQuestionAndOptions(currentQuestion, currentOptions);
+      }
+    });
+
+    document.getElementById("btn-toggle-voice-start").addEventListener("click", toggleVoiceEnabled);
+    document.getElementById("btn-toggle-voice-quiz").addEventListener("click", toggleVoiceEnabled);
+
+    document.getElementById("btn-open-zukan-start").addEventListener("click", openZukanModal);
+    document.getElementById("btn-open-zukan-quiz").addEventListener("click", openZukanModal);
+    document.getElementById("btn-open-zukan-clear").addEventListener("click", openZukanModal);
+    document.getElementById("btn-close-zukan").addEventListener("click", closeZukanModal);
+    document.getElementById("btn-close-zoom").addEventListener("click", closeZukanZoom);
+
+    document.getElementById("zukan-modal").addEventListener("click", (e) => {
+      if (e.target.id === "zukan-modal") closeZukanModal();
+    });
+
+    document.getElementById("zukan-zoom-overlay").addEventListener("click", (e) => {
+      if (e.target.id === "zukan-zoom-overlay") closeZukanZoom();
+    });
+
+    document.getElementById("btn-open-reset").addEventListener("click", () => {
+      document.getElementById("reset-confirm-modal").classList.remove("hidden");
+    });
+
+    document.getElementById("btn-reset-yes").addEventListener("click", () => {
+      resetAllProgressData();
+    });
+
+    document.getElementById("btn-reset-no").addEventListener("click", () => {
+      document.getElementById("reset-confirm-modal").classList.add("hidden");
+    });
+
+    document.getElementById("btn-replay-fanfare").addEventListener("click", () => {
+      ensureAudioContext();
+      playFanfareSound();
+    });
+
+    window.addEventListener("resize", () => {
+      const canvas = document.getElementById("fx-canvas");
+      if (canvas) {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+      }
+    });
+
+    // 起動時に保存データをロードして前回状態・図鑑・再開ボタンを復元
+    initStorageAndLoad();
+  </script>
+</body>
+</html>
